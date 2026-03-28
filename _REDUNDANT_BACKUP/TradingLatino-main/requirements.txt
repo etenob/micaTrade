@@ -1,0 +1,49 @@
+# Dependencias del sistema - COMPATIBLES CON PYTHON 3.13
+setuptools>=70.0.0
+wheel>=0.43.0
+pip>=24.0
+
+# Framework web principal
+Flask==3.0.3
+Flask-SocketIO==5.3.6
+
+# WebSocket y comunicación en tiempo real
+python-socketio==5.11.0
+python-engineio==4.9.0
+eventlet==0.36.1
+
+# Requests para APIs externas
+requests==2.32.3
+urllib3==2.2.2
+
+# Análisis de datos y matemáticas
+numpy==1.26.4
+pandas==2.2.2
+
+# Indicadores técnicos
+ta==0.10.2
+
+# Exchange APIs
+python-binance==1.0.19
+
+# Configuración y variables de entorno
+python-dotenv==1.0.1
+
+# Fecha y tiempo
+python-dateutil==2.9.0
+pytz==2024.1
+
+# Utilidades JSON
+ujson==5.10.0
+
+# Utilidades adicionales
+click==8.1.7
+
+# Servidor de producción
+gunicorn==22.0.0
+
+# CORS support
+flask-cors==4.0.1
+
+# Logging básico (sin librerías que puedan fallar)
+# loguru removido temporalmente por compatibilidad

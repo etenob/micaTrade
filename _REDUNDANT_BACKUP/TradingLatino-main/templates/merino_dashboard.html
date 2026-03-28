@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jaime Merino Trading Bot - Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link rel="stylesheet" href="/static/css/merino_dashboard.css">
+</head>
+<body>
+    <!-- Header Premium -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>Jaime Merino Trading Bot</h1>
+                    <div class="subtitle">Metodología Trading Latino - Análisis Técnico Profesional</div>
+                </div>
+            </div>
+            
+            <div class="header-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="active-signals">0</div>
+                    <div class="stat-label">Señales Activas</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="high-prob-signals">0</div>
+                    <div class="stat-label">Alta Probabilidad</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="portfolio-change">+0.00%</div>
+                    <div class="stat-label">Rendimiento Hoy</div>
+                </div>
+                <div class="connection-status" id="connection-status">
+                    <span class="status-dot"></span>
+                    <span>Conectado</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Layout Principal -->
+    <div class="main-layout">
+        <!-- Contenido Principal -->
+        <div class="main-content">
+            <!-- Panel de Control -->
+            <div class="control-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fas fa-cogs"></i>
+                        Panel de Control
+                    </div>
+                    <div class="connection-status" style="font-size: 0.8rem;">
+                        <span class="status-dot"></span>
+                        <span id="server-time">--:--:--</span>
+                    </div>
+                </div>
+                
+                <div class="controls-grid">
+                    <button class="control-btn btn-primary" id="analyze-all-btn">
+                        <i class="fas fa-chart-bar"></i>
+                        Analizar Todos
+                    </button>
+                    <button class="control-btn btn-success" id="btc-analysis-btn">
+                        <i class="fab fa-bitcoin"></i>
+                        Análisis BTC
+                    </button>
+                    <button class="control-btn btn-gold" id="philosophy-btn">
+                        <i class="fas fa-brain"></i>
+                        Filosofía Merino
+                    </button>
+                    <button class="control-btn btn-warning" id="refresh-btn">
+                        <i class="fas fa-sync-alt"></i>
+                        Actualizar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sección de Símbolos -->
+            <div class="symbols-section">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fas fa-coins"></i>
+                        Análisis de Trading
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="symbols-analyzed">0/2</div>
+                        <div class="stat-label">Símbolos Analizados</div>
+                    </div>
+                </div>
+                
+                <div class="symbols-grid" id="symbols-container">
+                    <!-- Tarjetas de trading se generarán aquí -->
+                    {% for symbol, data in symbols_data.items() %}
+                    <div class="trading-card fade-in" id="card-{{ symbol }}">
+                        <div class="card-header">
+                            <div class="card-actions">
+                                <br><button class="setup-toggle-btn signal-{{ data.signal.signal.lower() }} {% if data.signal.signal_strength >= 75 %}high-probability{% endif %}" 
+                                        onclick="toggleFutures('{{ symbol }}')" 
+                                        id="toggle-btn-{{ symbol }}"
+                                        {% if data.signal.signal in ['NO_SIGNAL', 'LOADING'] %}disabled{% endif %}>
+                                    <i class="fas fa-rocket"></i>
+                                    <span class="btn-text-show"></span>
+                                    <span class="btn-text-hide"></span>
+                                </button>
+                            </div>
+                            <div class="symbol-info">
+                                <div class="symbol-name">{{ symbol }}</div>
+                                <div class="symbol-price">${{ "%.2f"|format(data.current_price) }}</div>
+                            </div>
+                            <div class="signal-badges">
+                                <div class="signal-badge signal-{{ data.signal.signal.lower() }}">{{ data.signal.signal }}</div>
+                                <div class="strength-badge">{{ data.signal.signal_strength }}%</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Sección de Futuros -->
+                        <div class="futures-section" id="futures-{{ symbol }}" style="display: none;">
+                            <div class="futures-header">
+                                <i class="fas fa-rocket"></i>
+                                Setup para Futuros - Metodología Merino
+                            </div>
+                            
+                            <div class="futures-grid">
+                                <!-- Columna Izquierda: Entrada y Targets -->
+                                <div class="futures-column">
+                                    <div class="level-group">
+                                        <div class="level-title">
+                                            <i class="fas fa-bullseye"></i>
+                                            Entrada
+                                        </div>
+                                        <div class="level-item">
+                                            <span class="level-label">Precio Óptimo:</span>
+                                            <span class="level-value price-entry" id="entry-optimal-{{ symbol }}">$0.00</span>
+                                        </div>
+                                        <div class="level-item">
+                                            <span class="level-label">Rango:</span>
+                                            <span class="level-value" id="entry-range-{{ symbol }}">$0.00 - $0.00</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="level-group">
+                                        <div class="level-title">
+                                            <i class="fas fa-trophy"></i>
+                                            Take Profit
+                                        </div>
+                                        <div id="targets-{{ symbol }}">
+                                            <!-- Targets se llenarán dinámicamente -->
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Columna Derecha: Stop Loss y Gestión -->
+                                <div class="futures-column">
+                                    <div class="level-group">
+                                        <div class="level-title">
+                                            <i class="fas fa-shield-alt"></i>
+                                            Stop Loss
+                                        </div>
+                                        <div class="level-item">
+                                            <span class="level-label">Stop Principal:</span>
+                                            <span class="level-value price-stop" id="stop-price-{{ symbol }}">$0.00</span>
+                                        </div>
+                                        <div class="level-item">
+                                            <span class="level-label">Porcentaje:</span>
+                                            <span class="percentage negative" id="stop-percentage-{{ symbol }}">-0.00%</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="level-group">
+                                        <div class="level-title">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            Invalidación
+                                        </div>
+                                        <div class="level-item">
+                                            <span class="level-label">Nivel:</span>
+                                            <span class="level-value price-invalidation" id="invalidation-level-{{ symbol }}">$0.00</span>
+                                        </div>
+                                        <div style="font-size: 0.75rem; color: var(--warning); margin-top: 0.5rem;" id="invalidation-reason-{{ symbol }}">
+                                            Sin señal activa
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Gestión de Posición -->
+                            <div class="management-grid">
+                                <div class="management-item">
+                                    <div class="management-value" id="position-size-{{ symbol }}">0%</div>
+                                    <div class="management-label">Tamaño Posición</div>
+                                </div>
+                                <div class="management-item">
+                                    <div class="management-value" id="leverage-{{ symbol }}">1:1</div>
+                                    <div class="management-label">Apalancamiento</div>
+                                </div>
+                                <div class="management-item">
+                                    <div class="management-value" id="risk-reward-{{ symbol }}">1:0</div>
+                                    <div class="management-label">Risk/Reward</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- Vista del Mercado -->
+            <div class="sidebar-card market-overview">
+                <div class="panel-title">
+                    <i class="fas fa-globe"></i>
+                    Vista del Mercado
+                </div>
+                <div class="btc-display">
+                    <div class="btc-price" id="btc-price">$0.00</div>
+                    <div class="btc-change" id="btc-change">+0.00%</div>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">
+                    Última actualización: <span id="last-update">--:--</span>
+                </div>
+            </div>
+
+            <!-- Filosofía Merino -->
+            <div class="sidebar-card philosophy-card">
+                <div class="panel-title">
+                    <i class="fas fa-quote-left"></i>
+                    Filosofía Merino
+                </div>
+                <div class="philosophy-quote" id="philosophy-text">
+                    "El arte de tomar dinero de otros legalmente"
+                </div>
+                <div class="philosophy-author">- Jaime Merino, Trading Latino</div>
+                
+                <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255, 215, 0, 0.3);">
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">
+                        <div style="margin-bottom: 0.5rem;">📊 <strong>Filosofía 40-30-20-10</strong></div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">
+                            40% BTC largo plazo • 30% Gráficos semanales<br>
+                            20% Trading diario • 10% Futuros
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas de Trading -->
+            <div class="sidebar-card">
+                <div class="panel-title">
+                    <i class="fas fa-chart-pie"></i>
+                    Estadísticas
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+                    <div class="stat-item">
+                        <div class="stat-value" style="color: var(--success);" id="win-rate">0%</div>
+                        <div class="stat-label">Win Rate</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" style="color: var(--accent-blue);" id="avg-rr">1:0</div>
+                        <div class="stat-label">Promedio R/R</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" style="color: var(--warning);" id="total-trades">0</div>
+                        <div class="stat-label">Trades Hoy</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" style="color: var(--accent-gold);" id="portfolio-value">$10,000</div>
+                        <div class="stat-label">Capital</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(255, 215, 0, 0.1); border-radius: 8px; border: 1px solid rgba(255, 215, 0, 0.3);">
+                    <div style="font-size: 0.8rem; color: var(--accent-gold); font-weight: 600; margin-bottom: 0.5rem;">
+                        🛡️ Gestión de Riesgo Activa
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                        <div>Max pérdida diaria: <span style="color: var(--danger);">6%</span></div>
+                        <div>Max pérdida semanal: <span style="color: var(--danger);">8%</span></div>
+                        <div>Apalancamiento máximo: <span style="color: var(--warning);">1:3</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Console de Logs -->
+            <div class="sidebar-card console-card">
+                <div class="console-header">
+                    <div class="panel-title">
+                        <i class="fas fa-terminal"></i>
+                        Log del Sistema
+                    </div>
+                    <button class="control-btn" id="clear-log-btn" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; background: var(--bg-primary); border: 1px solid var(--border);">
+                        <i class="fas fa-trash"></i>
+                        Limpiar
+                    </button>
+                </div>
+                
+                <div class="console-content" id="console-log">
+                    <div class="log-entry">
+                        <span class="log-timestamp">[--:--:--]</span>
+                        <span class="log-level-success">SISTEMA</span>
+                        <span>Jaime Merino Trading Bot iniciado</span>
+                    </div>
+                    <div class="log-entry">
+                        <span class="log-timestamp">[--:--:--]</span>
+                        <span class="log-level-info">INFO</span>
+                        <span>Metodología Trading Latino cargada</span>
+                    </div>
+                    <div class="log-entry">
+                        <span class="log-timestamp">[--:--:--]</span>
+                        <span class="log-level-info">WEBSOCKET</span>
+                        <span>Conectando al servidor...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts JavaScript -->
+    <script src="/static/js/merino_dashboard.js"></script>
+</body>
+</html>

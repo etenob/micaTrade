@@ -1,0 +1,55 @@
+# modulo_scalping/nadaraya_strategy.py
+
+📈 Nadaraya Strategy – Jaime Merino Bot  
+
+Este módulo implementa la **estrategia Nadaraya-Watson**, basada en la regresión kernel para suavizar precios y detectar zonas de soporte/resistencia dinámicas.  
+
+---
+
+## 🚀 Clases y funciones principales
+
+### `class NadarayaStrategy`
+Encargada de aplicar la lógica completa de la estrategia.  
+
+#### Parámetros (configurables):
+- `h` → ancho de banda del kernel (suavizado)  
+- `r` → radio de regresión  
+- `lag` → retraso en la señal  
+- `atr_length` → longitud ATR para validación de volatilidad  
+- `atr_mult` → multiplicador ATR (filtro de ruido)  
+- `rsi_length` → longitud RSI para filtro de tendencia  
+
+#### Métodos:
+- `generate_signal(df: pd.DataFrame) -> str | None`  
+  Calcula la señal final:  
+  - `"LONG"`  
+  - `"SHORT"`  
+  - `None` si no hay señal.  
+
+- `_kernel_regression(series, h, r)`  
+  Devuelve la curva suavizada con Nadaraya-Watson.  
+
+---
+
+## 📊 Ejemplo de uso
+
+```python
+from modulo_scalping.nadaraya_strategy import NadarayaStrategy
+import pandas as pd
+
+df = pd.DataFrame(velas, columns=["open","high","low","close","volume"])
+strategy = NadarayaStrategy(h=4, r=4, atr_length=14, atr_mult=1.5, rsi_length=5)
+signal = strategy.generate_signal(df)
+
+print("Señal:", signal)  # → LONG / SHORT / None
+🧩 Integración
+Usado dentro de scalping_module.py para generar la señal base.
+
+Sus resultados se confirman con heikin_confirm.py.
+
+Enviado a Next.js vía scalping_bridge.py y next_bridge.py.
+
+📍 Ubicación
+bash
+Copiar código
+TradingLatino-main/modulo_scalping/nadaraya_strategy.py

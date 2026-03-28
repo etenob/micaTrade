@@ -1,0 +1,93 @@
+.
+├── estructura.txt
+├── heikin_confirm.py
+├── __init__.py
+├── nadaraya_ob_htf.py
+├── nadaraya_strategy.py
+├── nadaraya_wrapper.py
+├── __pycache__
+│   ├── heikin_confirm.cpython-310.pyc
+│   ├── __init__.cpython-310.pyc
+│   ├── nadaraya_strategy.cpython-310.pyc
+│   ├── nadaraya_wrapper.cpython-310.pyc
+│   ├── scalping_bridge.cpython-310.pyc
+│   ├── scalping_module.cpython-310.pyc
+│   └── scalping_runner.cpython-310.pyc
+├── README – Scalping Nadaraya + OB + ADX + Squeeze.md
+├── README_bridge
+├── README_heikin
+├── README_nadaraya
+├── README_scalping
+├── scalping_bridge.py
+├── scalping_module.py
+├── scripts_Daredevil
+│   ├── ADX_status
+│   │   ├── adx.py
+│   │   └── README_ADX.md
+│   ├── Awesome Oscillator
+│   │   ├── ao_awesome.py
+│   │   └── README_ao_awesome.md
+│   ├── checklist de proceso.md
+│   ├── descarga_Binance.py
+│   ├── Ema
+│   │   ├── ema_combo.py
+│   │   └── README_EMA.md
+│   ├── Ema_cross
+│   │   ├── ema_cross.py
+│   │   └── README_EMA_Cross.md
+│   ├── ema_trend_color
+│   │   ├── ema_trend_color.py
+│   │   └── README_EMA_Color.MD
+│   ├── Estocástico
+│   │   ├── README_Estocástico.md
+│   │   └── stoch_oscillator.py
+│   ├── koncorde_colores
+│   │   ├── koncorde_colores.py
+│   │   └── README_Koncorde.md
+│   ├── koncorde_diamond
+│   │   ├── koncorde.py
+│   │   └── README_Koncorde.md
+│   ├── MACD
+│   │   ├── macd_basic.py
+│   │   └── README_MACD.md
+│   ├── Momentum
+│   │   ├── estado_momentum.py
+│   │   └── README_Momentum.md
+│   ├── PEDIDO PARA EL Sr.MOUSE.md
+│   ├── README_scripts_Daredevil.md
+│   ├── RSI_Divergencias
+│   │   ├── README_RSI.md
+│   │   └── rsi_divergencias.py
+│   ├── show_status
+│   │   ├── README_ShowStatus.md
+│   │   └── show_status.py
+│   ├── Squeeze_Momentum
+│   │   ├── README_Squeeze_Momentum.md
+│   │   └── squeeze_momentum.py
+│   ├── test_whale.py
+│   ├── tradinglatino_strategy.py
+│   ├── tree.txt
+│   └── whale
+│       ├── __init__.py
+│       ├── Lupown_Bot.txt
+│       ├── Nuevo Documento de texto.txt
+│       ├── __pycache__
+│       │   ├── __init__.cpython-313.pyc
+│       │   ├── rsimfi_custom.cpython-313.pyc
+│       │   ├── wavetrend.cpython-313.pyc
+│       │   ├── whale_lpwn.cpython-313.pyc
+│       │   ├── whale_signals.cpython-313.pyc
+│       │   └── yfinance.cpython-313.pyc
+│       ├── README_RSI_MFI.md
+│       ├── README_WaveTrend.md
+│       ├── Readme_whale_lpwn.md
+│       ├── README_whale+RSI_MFI.md
+│       ├── README_whale_signals.md
+│       ├── rsimfi_custom.py
+│       ├── wavetrend.py
+│       ├── whale_signals.py
+│       └── _yfinance.py
+├── strategy_runner.py
+└── TXT.txt
+
+17 directories, 73 files

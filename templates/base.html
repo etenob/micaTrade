@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MicoBot{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Colores Core */
+            --bg-dark: #0a0b11;
+            --bg-card: #15171e;
+            --accent: #00f2ff;
+            --accent-glow: rgba(0, 242, 255, 0.1);
+            --green: #00ff88;
+            --red: #ff3366;
+            --text-main: #e0e0e0;
+            --text-dim: #8ba3c7;
+            --border: rgba(255, 255, 255, 0.05);
+
+            /* Navegación */
+            --nav-bg: #0a0b11;
+            --nav-border: #1e1e2d;
+            --nav-text: #8ba3c7;
+            --nav-active: var(--accent);
+            --nav-active-bg: var(--accent-glow);
+            --nav-hover: rgba(255, 255, 255, 0.05);
+        }
+
+        * { box-sizing: border-box; }
+
+        body { 
+            margin: 0; 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-dark); 
+            color: var(--text-main); 
+            line-height: 1.5;
+        }
+
+        /* ───── COMPONENTES UNIFICADOS ───── */
+        
+        /* Tarjetas */
+        .mico-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .mico-card:hover { 
+            transform: translateY(-2px); 
+            border-color: var(--accent);
+        }
+
+        /* Tablas */
+        .mico-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .mico-table th {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-dim);
+            text-align: left;
+            padding: 14px 18px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        .mico-table td {
+            padding: 14px 18px;
+            border-top: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        /* Tags y Badges */
+        .mico-tag {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-main);
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .pnl-pos { color: var(--green); font-weight: 600; }
+        .pnl-neg { color: var(--red); font-weight: 600; }
+
+        /* Botones */
+        .mico-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: 0.2s;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .btn-outline {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: transparent;
+        }
+        .btn-outline:hover {
+            background: var(--accent);
+            color: #000;
+        }
+        .btn-chart {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            border: 1px solid var(--border);
+        }
+        .btn-chart:hover {
+            border-color: var(--accent);
+            background: var(--accent-glow);
+        }
+
+        /* ───── NAV BAR ───── */
+        #mico-nav {
+            position: sticky;
+            top: 0;
+            z-index: 9999;
+            background: var(--nav-bg);
+            border-bottom: 1px solid var(--nav-border);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            height: 56px;
+            gap: 4px;
+        }
+
+        .mico-logo {
+            font-size: 1.1rem;
+            font-weight: 900;
+            color: var(--nav-active);
+            letter-spacing: 1px;
+            margin-right: 20px;
+            white-space: nowrap;
+        }
+
+        .mico-logo span {
+            color: #fff;
+            font-weight: 300;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            flex: 1;
+        }
+
+        .nav-links a {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            text-decoration: none;
+            color: var(--nav-text);
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 7px 14px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .nav-links a:hover {
+            background: var(--nav-hover);
+            color: #fff;
+        }
+
+        .nav-links a.active {
+            background: var(--nav-active-bg);
+            color: var(--nav-active);
+            border-color: rgba(0, 242, 255, 0.25);
+        }
+
+        .nav-links a .nav-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--nav-active);
+            display: none;
+        }
+
+        .nav-links a.active .nav-dot {
+            display: block;
+        }
+
+        .nav-right {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.78rem;
+        }
+
+        .mode-pill {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.72rem;
+            letter-spacing: .5px;
+        }
+
+        .mode-live  { background: rgba(0,230,118,.15); color: #00e676; border: 1px solid #00e676; }
+        .mode-mon   { background: rgba(255,174,0,.15);  color: #ffae00;  border: 1px solid #ffae00; }
+
+        .nav-time { color: #4a5068; font-size: .78rem; font-family: monospace; }
+
+        /* ───── CONTENT BLOCK ───── */
+        #mico-content { min-height: calc(100vh - 56px); }
+    </style>
+
+    {% block head %}{% endblock %}
+</head>
+<body>
+
+<nav id="mico-nav">
+    <span class="mico-logo">🤖 MICO<span>bot</span></span>
+
+    <div class="nav-links">
+        <a href="/" class="{{ 'active' if active_page in ['radar', 'radar_shorts'] else '' }}">
+            <span class="nav-dot"></span>🛰️ Radar
+        </a>
+        <a href="/activas" class="{{ 'active' if active_page == 'activas' else '' }}">
+            <span class="nav-dot"></span>🟢 Activas
+        </a>
+        <a href="/analizador" class="{{ 'active' if active_page in ['analizador', 'analizador_shorts'] else '' }}">
+            <span class="nav-dot"></span>🔬 Analizador
+        </a>
+        <a href="/resumen" class="{{ 'active' if active_page == 'resumen' else '' }}">
+            <span class="nav-dot"></span>💰 Proyecciones
+        </a>
+        <a href="/historial" class="{{ 'active' if active_page == 'historial' else '' }}">
+            <span class="nav-dot"></span>📜 Historial
+        </a>
+        <a href="http://127.0.0.1:5001/" class="{{ 'active' if active_page == 'stocks' else '' }}">
+            <span class="nav-dot"></span>🏛️ Bolsa
+        </a>
+    </div>
+
+    <div class="nav-right">
+        {% if live_mode is defined %}
+        <span class="mode-pill {{ 'mode-live' if live_mode else 'mode-mon' }}">
+            {{ '🟢 LIVE' if live_mode else '📝 MONITOR' }}
+        </span>
+        {% endif %}
+        <span class="nav-time" id="nav-clock">--:--:--</span>
+    </div>
+</nav>
+
+<div id="mico-content">
+    {% block content %}{% endblock %}
+</div>
+
+<script>
+    // Reloj en tiempo real
+    function updateClock() {
+        const now = new Date();
+        const t = now.toLocaleTimeString('es-AR', { hour12: false });
+        document.getElementById('nav-clock').textContent = t;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+</script>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

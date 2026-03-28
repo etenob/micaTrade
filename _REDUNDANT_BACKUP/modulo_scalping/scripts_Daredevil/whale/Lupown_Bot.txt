@@ -1,0 +1,111 @@
+/////////
+///// LUPOWN
+/////
+
+
+
+// Sommi Flag
+
+
+wtChannelLen = input(9, title='WT Channel Length',group = "Lupown")
+wtAverageLen = input(12, title='WT Average Length',group = "Lupown")
+wtMASource = input(hlc3, title='WT MA Source',group = "Lupown")
+wtMALen = input(3, title='WT MA Length',group = "Lupown")
+
+rsiMFIperiod = input(60, title='MFI Period',group = "Lupown")
+rsiMFIMultiplier = input.float(150, title='MFI Area multiplier',group = "Lupown")
+rsiMFIPosY = input(2.5, title='MFI Area Y Pos',group = "Lupown")
+
+
+sommiVwapTF = input('720', title='Wave timeframe',group = "Lupown")
+sommiVwapBearLevel = input(0, title='F. Wave Bear Level (less than)',group = "Lupown")
+sommiVwapBullLevel = input(0, title='F. Wave Bull Level (more than)',group = "Lupown")
+soomiFlagWTBearLevel = input(0, title='WT Bear Level (more than)',group = "Lupown")
+soomiFlagWTBullLevel = input(0, title='WT Bull Level (less than)',group = "Lupown")
+soomiRSIMFIBearLevel = input(0, title='Money flow Bear Level (less than)',group = "Lupown")
+soomiRSIMFIBullLevel = input(0, title='Money flow Bull Level (more than)',group = "Lupown")
+
+// Sommi Diamond
+
+sommiHTCRes = input.timeframe('60', title='HTF Candle Res. 1',group = "Lupown")
+sommiHTCRes2 = input.timeframe('240', title='HTF Candle Res. 2',group = "Lupown")
+soomiDiamondWTBearLevel = input(0, title='WT Bear Level (More than)',group = "Lupown")
+soomiDiamondWTBullLevel = input(0, title='WT Bull Level (Less than)',group = "Lupown")
+osLevel = -53
+obLevel = 53
+
+// WaveTrend
+f_wavetrend(src, chlen, avg, malen, tf) =>
+    tfsrc = request.security(syminfo.tickerid, tf, src)
+    esa = ta.ema(tfsrc, chlen)
+    de = ta.ema(math.abs(tfsrc - esa), chlen)
+    ci = (tfsrc - esa) / (0.015 * de)
+    wt1 = request.security(syminfo.tickerid, tf, ta.ema(ci, avg))
+    wt2 = request.security(syminfo.tickerid, tf, ta.sma(wt1, malen))
+    wtVwap = wt1 - wt2
+    wtOversold = wt2 <= osLevel
+    wtOverbought = wt2 >= obLevel
+    wtCross = ta.cross(wt1, wt2)
+    wtCrossUp = wt2 - wt1 <= 0
+    wtCrossDown = wt2 - wt1 >= 0
+    wtCrosslast = ta.cross(wt1[2], wt2[2])
+    wtCrossUplast = wt2[2] - wt1[2] <= 0
+    wtCrossDownlast = wt2[2] - wt1[2] >= 0
+    [wt1, wt2, wtOversold, wtOverbought, wtCross, wtCrossUp, wtCrossDown, wtCrosslast, wtCrossUplast, wtCrossDownlast, wtVwap]
+
+// RSI+MFI
+f_rsimfi(_period, _multiplier, _tf) =>
+    request.security(syminfo.tickerid, _tf, ta.sma((close - open) / (high - low) * _multiplier, _period) - rsiMFIPosY)
+
+
+// Get higher timeframe candle
+f_getTFCandle(_tf) =>
+    _open = request.security(ticker.heikinashi(syminfo.tickerid), _tf, open, barmerge.gaps_off, barmerge.lookahead_on)
+    _close = request.security(ticker.heikinashi(syminfo.tickerid), _tf, close, barmerge.gaps_off, barmerge.lookahead_on)
+    _high = request.security(ticker.heikinashi(syminfo.tickerid), _tf, high, barmerge.gaps_off, barmerge.lookahead_on)
+    _low = request.security(ticker.heikinashi(syminfo.tickerid), _tf, low, barmerge.gaps_off, barmerge.lookahead_on)
+    hl2 = (_high + _low) / 2.0
+    newBar = ta.change(_open)
+    candleBodyDir = _close > _open
+    [candleBodyDir, newBar]
+
+// Sommi flag
+f_findSommiFlag(tf, wt1, wt2, rsimfi, wtCross, wtCrossUp, wtCrossDown) =>
+    [hwt1, hwt2, hwtOversold, hwtOverbought, hwtCross, hwtCrossUp, hwtCrossDown, hwtCrosslast, hwtCrossUplast, hwtCrossDownlast, hwtVwap] = f_wavetrend(wtMASource, wtChannelLen, wtAverageLen, wtMALen, tf)
+
+    bearPattern = rsimfi < soomiRSIMFIBearLevel and wt2 > soomiFlagWTBearLevel and wtCross and wtCrossDown and hwtVwap < sommiVwapBearLevel
+
+    bullPattern = rsimfi > soomiRSIMFIBullLevel and wt2 < soomiFlagWTBullLevel and wtCross and wtCrossUp and hwtVwap > sommiVwapBullLevel
+
+    [bearPattern, bullPattern, hwtVwap]
+
+f_findSommiDiamond(tf, tf2, wt1, wt2, wtCross, wtCrossUp, wtCrossDown) =>
+    [candleBodyDir, newBar] = f_getTFCandle(tf)
+    [candleBodyDir2, newBar2] = f_getTFCandle(tf2)
+    bearPattern = wt2 >= soomiDiamondWTBearLevel and wtCross and wtCrossDown and not candleBodyDir and not candleBodyDir2
+    bullPattern = wt2 <= soomiDiamondWTBullLevel and wtCross and wtCrossUp and candleBodyDir and candleBodyDir2
+    [bearPattern, bullPattern]
+var sommiBullish = false , sommiBullishDiamond = false , sommiBearish =  false , sommiBearishDiamond = false
+
+// RSI + MFI Area
+if lpwn
+    rsiMFI = f_rsimfi(rsiMFIperiod, rsiMFIMultiplier, timeframe.period)
+
+    // Calculates WaveTrend
+    [wt1, wt2, wtOversold, wtOverbought, wtCross, wtCrossUp, wtCrossDown, wtCross_last, wtCrossUp_last, wtCrossDown_last, wtVwap] = f_wavetrend(wtMASource, wtChannelLen, wtAverageLen, wtMALen, timeframe.period)
+
+
+
+    // Sommi flag
+    [sommiBearish1, sommiBullish1, hvwap] = f_findSommiFlag(sommiVwapTF, wt1, wt2, rsiMFI, wtCross, wtCrossUp, wtCrossDown)
+
+    //Sommi diamond
+    [sommiBearishDiamond1, sommiBullishDiamond1] = f_findSommiDiamond(sommiHTCRes, sommiHTCRes2, wt1, wt2, wtCross, wtCrossUp, wtCrossDown)
+    sommiBullish := sommiBullish1 , sommiBullishDiamond := sommiBullishDiamond1 , sommiBearish :=  sommiBearish1 , sommiBearishDiamond := sommiBearishDiamond1
+
+
+
+plotchar(lpwn and sommiBullish and sommiBullishDiamond, title = "whale", char = "👽",location=location.belowbar,size = size.tiny)
+plotchar(lpwn and sommiBearish and sommiBearishDiamond, title = "whale invert", char = "👹",location=location.abovebar,size = size.tiny)
+/////////
+///// END LUPOEN

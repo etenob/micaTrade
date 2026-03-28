@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+{% block title %}Posiciones Activas - MicoBot{% endblock %}
+{% block head %}
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2rem;
+            color: var(--accent);
+        }
+
+        .btn-back {
+            color: var(--text-main);
+            text-decoration: none;
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            transition: 0.3s;
+        }
+
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        th,
+        td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: rgba(0, 0, 0, 0.2);
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+
+        th:after {
+            content: " ↕";
+            font-size: 0.7rem;
+            opacity: 0.2;
+            margin-left: 5px;
+        }
+
+        th.sorted-asc:after { content: " ▲"; opacity: 1; color: var(--accent); }
+        th.sorted-desc:after { content: " ▼"; opacity: 1; color: var(--accent); }
+        th.sorted-asc, th.sorted-desc { color: var(--accent); border-bottom: 2px solid var(--accent); }
+
+        th:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--accent);
+        }
+
+        .pnl-pos {
+            color: var(--green);
+            font-weight: 600;
+        }
+
+        .pnl-neg {
+            color: var(--red);
+            font-weight: 600;
+        }
+
+        .tag {
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            border-radius: 5px;
+            background: rgba(0, 242, 255, 0.1);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        .btn-chart {
+            text-decoration: none;
+            color: inherit;
+            transition: 0.3s;
+        }
+
+        .btn-chart:hover {
+            color: var(--accent);
+            text-shadow: 0 0 10px var(--accent);
+        }
+
+        .btn-close {
+            background: rgba(255, 51, 102, 0.1);
+            color: var(--red);
+            border: 1px solid var(--red);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .btn-close:hover {
+            background: var(--red);
+            color: white;
+        }
+
+        .alert-tag {
+            background: rgba(255, 204, 0, 0.1);
+            border: 1px solid #ffcc00;
+            color: #ffcc00;
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 800;
+            display: inline-block;
+            margin-top: 4px;
+            text-transform: uppercase;
+        }
+
+        .price-up { color: var(--green); font-weight: bold; }
+        .price-down { color: var(--text-main); }
+        .dist-pct { font-size: 0.75rem; opacity: 0.7; font-weight: 400; }
+        
+        .mico-table th { cursor: pointer; }
+        .mico-table th:hover { background: rgba(255,255,255,0.08); }
+    </style>
+{% endblock %}
+{% block content %}
+    <div style="padding: 20px;">
+
+    {% if trades %}
+    <table class="mico-table">
+        <thead>
+            <tr>
+                <th onclick="sortTable(0)">Símbolo</th>
+                <th onclick="sortTable(1)">Estrategia</th>
+                <th onclick="sortTable(2)">Tiempo</th>
+                <th onclick="sortTable(3)">Inversión</th>
+                <th onclick="sortTable(4)">P. Entrada</th>
+                <th onclick="sortTable(5)">P. Actual</th>
+                <th onclick="sortTable(6)">Stop Loss</th>
+                <th onclick="sortTable(7)">Profit</th>
+                <th onclick="sortTable(8)">PnL Actual</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in trades %}
+            <tr>
+                <td>
+                    <a href="/chart/{{ t.symbol }}?tf=4h" target="_blank" class="btn-chart">
+                        <strong>{{ t.symbol }} 🔗</strong>
+                    </a>
+                </td>
+                <td>
+                    <span class="mico-tag">{{ t.strategy }}</span>
+                    {% if t.new_signals %}
+                        <div style="margin-top: 4px;">
+                            {% for n_s in t.new_signals %}
+                                <div class="alert-tag">🔥 NUEVA: {{ n_s }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </td>
+                <td style="font-size: 0.9rem; color: #888;">{{ t.duration }}</td>
+                <td>${{ "%.2f"|format(t.usdt_value) }} <span style="font-size: 0.75rem; color: var(--text-dim);">({{
+                        t.quantity }})</span></td>
+                <td style="color: #666;">${{ "%.4f"|format(t.entry_price) }}</td>
+                <td class="target-val {{ 'pnl-pos' if t.pnl_pct >= 0 else '' }}">${{ "%.4f"|format(t.current_price) }}</td>
+                <td style="color: var(--red);">
+                    {% set ls = t.last_stop if t.last_stop is defined else t.stop_loss %}
+                    <span class="target-val">${{ "%.4f"|format(ls) }}</span><br>
+                    <span class="dist-pct">({{ "%.2f"|format(((ls - t.current_price) / t.current_price) * 100) }}%)</span>
+                </td>
+                <td style="color: var(--green);">
+                    {% if t.targets %}
+                        {% for target in t.targets %}
+                        <span class="target-val">${{ "%.4f"|format(target) }}</span>
+                        <span class="dist-pct">({{ "%.2f"|format(((target - t.current_price) / t.current_price) * 100) }}%)</span><br>
+                        {% endfor %}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td class="{{ 'pnl-pos' if t.pnl_pct >= 0 else 'pnl-neg' }}">
+                    <strong>{{ "%.4f"|format(t.pnl_usdt) }}</strong> USDT<br>
+                    <span style="font-size: 0.8rem;">({{ "%.2f"|format(t.pnl_pct) }}%)</span>
+                </td>
+                <td>
+                    <button class="btn-close" onclick="cerrarPosicion('{{ t.symbol }}')">Cerrar ✖</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        function cerrarPosicion(symbol) {
+            if (confirm('¿Estás seguro de cerrar ' + symbol + ' a MERCADO? Se cancelará la OCO y se venderá inmediatamente.')) {
+                const btn = event.target;
+                btn.disabled = true;
+                btn.innerText = 'Cerrando...';
+
+                fetch('/cerrar/' + symbol)
+                    .then(response => {
+                        if (response.ok) {
+                            alert('Posición cerrada con éxito');
+                            location.reload();
+                        } else {
+                            alert('Error al cerrar posición');
+                            btn.disabled = false;
+                            btn.innerText = 'Cerrar ✖';
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('Error de conexión');
+                        btn.disabled = false;
+                        btn.innerText = 'Cerrar ✖';
+                    });
+            }
+        }
+    </script>
+    {% else %}
+    <div
+        style="padding: 50px; text-align: center; background: var(--bg-card); border-radius: 12px; color: var(--text-dim);">
+        <h2>No hay posiciones activas en este momento</h2>
+        <p>El bot está buscando oportunidades de acuerdo a la configuración actual.</p>
+    </div>
+    {% endif %}
+
+    <script>
+        // Auto-refresh every 30 seconds
+        setTimeout(() => { window.location.reload(); }, 30000);
+
+        function sortTable(n, forcedDir = null) {
+            var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+            table = document.querySelector("table");
+            switching = true;
+            dir = forcedDir || "asc";
+            
+            // Si ya está ordenado en esa dirección, cambiar a desc (a menos que forcedDir esté presente)
+            // Esta lógica simple de b-i solo funciona en click manual.
+            
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[n];
+                    y = rows[i + 1].getElementsByTagName("TD")[n];
+                    
+                    var xVal = x.innerText.replace(/[^\d\.-]/g, '');
+                    var yVal = y.innerText.replace(/[^\d\.-]/g, '');
+                    
+                    if (isNaN(parseFloat(xVal)) || isNaN(parseFloat(yVal))) {
+                        xVal = x.innerText.toLowerCase();
+                        yVal = y.innerText.toLowerCase();
+                    } else {
+                        xVal = parseFloat(xVal);
+                        yVal = parseFloat(yVal);
+                    }
+
+                    if (dir == "asc") {
+                        if (xVal > yVal) { shouldSwitch = true; break; }
+                    } else if (dir == "desc") {
+                        if (xVal < yVal) { shouldSwitch = true; break; }
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                    switchcount ++;
+                } else {
+                    if (switchcount == 0 && dir == "asc" && !forcedDir) {
+                        dir = "desc";
+                        switching = true;
+                    }
+                }
+            }
+            
+            // Guardar en localStorage
+            localStorage.setItem('sortCol', n);
+            localStorage.setItem('sortDir', dir);
+
+            // Marcar visualmente las cabeceras
+            var headers = table.querySelectorAll("th");
+            headers.forEach(h => h.classList.remove("sorted-asc", "sorted-desc"));
+            if (headers[n]) {
+                headers[n].classList.add(dir == "asc" ? "sorted-asc" : "sorted-desc");
+            }
+        }
+
+        // Recuperar orden al cargar
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedCol = localStorage.getItem('sortCol');
+            const savedDir = localStorage.getItem('sortDir');
+            if (savedCol !== null) {
+                sortTable(parseInt(savedCol), savedDir);
+            }
+        });
+    </script>
+{% endblock %}

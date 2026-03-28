@@ -1,0 +1,198 @@
+--- DIAGNOSTICO DETALLADO FETUSDT ---
+
+ID: 3489823099
+  Status: EXPIRED | Side: SELL | Type: LIMIT_MAKER
+  Price: 0.26590000 | StopPrice: 0.00000000
+  Qty: 42.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774446810718
+--------------------------------------------------
+ID: 3490257112
+  Status: FILLED | Side: BUY | Type: MARKET
+  Price: 0.00000000 | StopPrice: 0.00000000
+  Qty: 43.60000000 | Executed: 43.60000000
+  USDT Total: 10.97848000
+  Time: 1774446859731
+--------------------------------------------------
+ID: 3490259180
+  Status: CANCELED | Side: SELL | Type: STOP_LOSS_LIMIT
+  Price: 0.23870000 | StopPrice: 0.23920000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774447001496
+--------------------------------------------------
+ID: 3490259181
+  Status: CANCELED | Side: SELL | Type: LIMIT_MAKER
+  Price: 0.25940000 | StopPrice: 0.00000000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774447001496
+--------------------------------------------------
+ID: 3490266621
+  Status: CANCELED | Side: SELL | Type: STOP_LOSS_LIMIT
+  Price: 0.23880000 | StopPrice: 0.23930000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774447081186
+--------------------------------------------------
+ID: 3490266622
+  Status: CANCELED | Side: SELL | Type: LIMIT_MAKER
+  Price: 0.25940000 | StopPrice: 0.00000000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774447081186
+--------------------------------------------------
+ID: 3490267964
+  Status: CANCELED | Side: SELL | Type: STOP_LOSS_LIMIT
+  Price: 0.23890000 | StopPrice: 0.23940000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774447218083
+--------------------------------------------------
+ID: 3490267965
+  Status: CANCELED | Side: SELL | Type: LIMIT_MAKER
+  Price: 0.25940000 | StopPrice: 0.00000000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774447218083
+--------------------------------------------------
+ID: 3490272934
+  Status: CANCELED | Side: SELL | Type: STOP_LOSS_LIMIT
+  Price: 0.23900000 | StopPrice: 0.23950000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774447479752
+--------------------------------------------------
+ID: 3490272935
+  Status: CANCELED | Side: SELL | Type: LIMIT_MAKER
+  Price: 0.25940000 | StopPrice: 0.00000000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774447479752
+--------------------------------------------------
+ID: 3490284651
+  Status: CANCELED | Side: SELL | Type: STOP_LOSS_LIMIT
+  Price: 0.23960000 | StopPrice: 0.24010000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774447615418
+--------------------------------------------------
+ID: 3490284652
+  Status: CANCELED | Side: SELL | Type: LIMIT_MAKER
+  Price: 0.25940000 | StopPrice: 0.00000000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774447615418
+--------------------------------------------------
+ID: 3490290654
+  Status: CANCELED | Side: SELL | Type: STOP_LOSS_LIMIT
+  Price: 0.23980000 | StopPrice: 0.24030000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774447878209
+--------------------------------------------------
+ID: 3490290655
+  Status: CANCELED | Side: SELL | Type: LIMIT_MAKER
+  Price: 0.25940000 | StopPrice: 0.00000000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774447878209
+--------------------------------------------------
+ID: 3490299150
+  Status: CANCELED | Side: SELL | Type: STOP_LOSS_LIMIT
+  Price: 0.23990000 | StopPrice: 0.24040000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774448105652
+--------------------------------------------------
+ID: 3490299151
+  Status: CANCELED | Side: SELL | Type: LIMIT_MAKER
+  Price: 0.25940000 | StopPrice: 0.00000000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774448105652
+--------------------------------------------------
+ID: 3490305113
+  Status: CANCELED | Side: SELL | Type: STOP_LOSS_LIMIT
+  Price: 0.24010000 | StopPrice: 0.24060000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774448247053
+--------------------------------------------------
+ID: 3490305114
+  Status: CANCELED | Side: SELL | Type: LIMIT_MAKER
+  Price: 0.25940000 | StopPrice: 0.00000000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774448247053
+--------------------------------------------------
+ID: 3490307856
+  Status: CANCELED | Side: SELL | Type: STOP_LOSS_LIMIT
+  Price: 0.24040000 | StopPrice: 0.24090000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774448455080
+--------------------------------------------------
+ID: 3490307857
+  Status: CANCELED | Side: SELL | Type: LIMIT_MAKER
+  Price: 0.25940000 | StopPrice: 0.00000000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774448455080
+--------------------------------------------------
+ID: 3490313979
+  Status: CANCELED | Side: SELL | Type: STOP_LOSS_LIMIT
+  Price: 0.24050000 | StopPrice: 0.24100000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774448532044
+--------------------------------------------------
+ID: 3490313980
+  Status: CANCELED | Side: SELL | Type: LIMIT_MAKER
+  Price: 0.25940000 | StopPrice: 0.00000000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774448532044
+--------------------------------------------------
+ID: 3490316980
+  Status: CANCELED | Side: SELL | Type: STOP_LOSS_LIMIT
+  Price: 0.24130000 | StopPrice: 0.24180000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774448675180
+--------------------------------------------------
+ID: 3490316981
+  Status: CANCELED | Side: SELL | Type: LIMIT_MAKER
+  Price: 0.25940000 | StopPrice: 0.00000000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774448675180
+--------------------------------------------------
+ID: 3490323530
+  Status: CANCELED | Side: SELL | Type: STOP_LOSS_LIMIT
+  Price: 0.24170000 | StopPrice: 0.24220000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774448757380
+--------------------------------------------------
+ID: 3490323531
+  Status: CANCELED | Side: SELL | Type: LIMIT_MAKER
+  Price: 0.25940000 | StopPrice: 0.00000000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774448757380
+--------------------------------------------------
+ID: 3490327210
+  Status: CANCELED | Side: SELL | Type: STOP_LOSS_LIMIT
+  Price: 0.24210000 | StopPrice: 0.24260000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774448903531
+--------------------------------------------------
+ID: 3490327211
+  Status: CANCELED | Side: SELL | Type: LIMIT_MAKER
+  Price: 0.25940000 | StopPrice: 0.00000000
+  Qty: 43.60000000 | Executed: 0.00000000
+  USDT Total: 0.00000000
+  Time: 1774448903531
+--------------------------------------------------

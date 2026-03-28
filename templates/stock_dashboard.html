@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Stock Scanner - Mico Station{% endblock %}
+{% block head %}
+    <style>
+
+        
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid var(--border); padding-bottom: 15px; }
+        .header h1 { margin: 0; font-size: 1.8rem; color: var(--accent); }
+        .market-status { font-size: 0.9rem; padding: 5px 12px; border-radius: 15px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        .symbol { font-size: 1.5rem; font-weight: 800; color: var(--accent); text-decoration: none; }
+        .price { font-size: 1.2rem; font-weight: 600; color: var(--green); }
+        
+        .signal { font-size: 0.9rem; font-weight: bold; margin-bottom: 15px; text-align: center; padding: 8px; border-radius: 8px; }
+        .signal-LONG { background: rgba(0, 255, 136, 0.1); color: var(--green); border: 1px solid var(--green); }
+        .signal-SHORT { background: rgba(255, 51, 102, 0.1); color: var(--red); border: 1px solid var(--red); }
+        .signal-WAIT { background: rgba(255, 255, 255, 0.05); color: var(--text-dim); }
+
+        .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.8rem; }
+        .metric { background: rgba(255,255,255,0.02); padding: 8px; border-radius: 6px; }
+        .m-lab { color: var(--text-dim); margin-bottom: 4px; }
+        .m-val { font-weight: 600; }
+        
+        .btn-chart { display: block; width: 100%; margin-top: 15px; text-align: center; padding: 10px; background: #1a1a2e; color: var(--text-main); text-decoration: none; border-radius: 8px; transition: 0.3s; border: 1px solid var(--border); font-weight: 600; }
+        .btn-chart:hover { background: var(--accent); color: #000; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div style="padding: 24px;">
+    <h1 style="color: var(--accent); margin-top: 0;">🏛️ Stock Market Scanner</h1>
+
+    <div class="grid">
+        {% for s, d in stocks.items() %}
+        <div class="mico-card">
+            <div class="card-header">
+                <a href="/chart/{{ d.symbol }}" target="_blank" class="symbol">{{ d.symbol }}</a>
+                <div class="price">${{ "%.2f"|format(d.price) }}</div>
+            </div>
+            
+            <div class="signal signal-{{ d.signal }}">
+                {{ d.signal }} (Confianza: {{ d.confidence }}%)
+            </div>
+
+            <div class="metrics">
+                <div class="metric">
+                    <div class="m-lab">ADX Trend</div>
+                    <div class="m-val" style="color: {{ 'cyan' if d.adx > 20 else 'inherit' }}">{{ "%.1f"|format(d.adx) }}</div>
+                </div>
+                <div class="metric">
+                    <div class="m-lab">Squeeze</div>
+                    <div class="m-val" style="color: {{ 'var(--green)' if d.squeeze > 0 else 'var(--red)' }}">{{ "%.4f"|format(d.squeeze) }}</div>
+                </div>
+                <div class="metric">
+                    <div class="m-lab">EMA 11 / 55</div>
+                    <div class="m-val">{{ "%.2f"|format(d.ema_11) }} / {{ "%.2f"|format(d.ema_55) }}</div>
+                </div>
+                <div class="metric">
+                    <div class="m-lab">Estado</div>
+                    <div class="m-val">{{ "BULLISH" if d.price > d.ema_11 else "BEARISH" }}</div>
+                </div>
+            </div>
+
+            <a href="/chart/{{ d.symbol }}" target="_blank" class="btn-chart">ABRIR GRÁFICO 📊</a>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Auto-refresh every 30 seconds
+    setTimeout(() => { window.location.reload(); }, 30000);
+</script>
+{% endblock %}

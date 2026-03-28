@@ -1,0 +1,83 @@
+Genial 🙌
+Acá te dejo el **README** para `scalping_module.py`, ya con la etiqueta en la primera línea para que quede todo prolijo y consistente:
+
+````markdown
+# modulo_scalping/README_scalping_module.py
+
+⚡ Scalping Module – Jaime Merino Bot
+
+Este módulo implementa el **motor principal de la estrategia de scalping**, unificando:  
+
+- Estrategia **Nadaraya-Watson** (detección de señales)  
+- Control de **máximos por hora y día** (evita sobreoperar)  
+- Gestión de alertas vía **Telegram**  
+
+Se encarga de procesar los datos y devolver un resultado estandarizado que puede ser usado tanto por el backend como por el frontend.
+
+---
+
+## 🚀 Función principal
+
+### `run_scalping(symbol="ETHUSDT") -> dict`
+Flujo:
+
+1. 📥 Descarga velas desde Binance (según `MerinoConfig.SCALPING['timeframe']`).  
+2. 🧮 Convierte las velas a DataFrame (`pandas`).  
+3. 📈 Calcula señal con **NadarayaStrategy**.   
+5. ⏱️ Aplica límites de señales:
+   - `max_signals_per_hour`
+   - `max_trades_per_day`  
+6. 📡 Envía alertas con `AlertManager` (y a Telegram si corresponde).  
+7. 📝 Devuelve un `dict` con la señal y el estado.
+
+---
+
+## 📊 Ejemplo de salida
+
+```json
+{
+  "symbol": "ETHUSDT",
+  "interval": "5m",
+  "nadaraya": "LONG",
+  "heikin": "CONFIRM_LONG",
+  "signal": "LONG",
+  "timestamp": 1736012345
+}
+````
+
+Si no hay señal confirmada o se alcanza el límite de operaciones, devuelve `"signal": null`.
+
+---
+
+## ⚙️ Dependencias
+
+* `modulo_scalping.nadaraya_strategy` → cálculo de señal Nadaraya
+* `modulo_scalping.heikin_confirm` → confirmación Heikin
+* `services.binance_service` → descarga de velas
+* `Telegram.alert_manager` y `Telegram.telegram_helper` → alertas
+* `enhanced_config.MerinoConfig` → configuración de timeframes y límites
+
+---
+
+## 🧩 Integración
+
+* **`scalping_module.py`** → motor central de la estrategia.
+* **`scalping_bridge.py`** → prepara datos para Next.js (frontend).
+* **`next_bridge.py`** → expone API REST y eventos Socket.IO.
+* **`RealtimeChart.tsx`** → visualiza velas + señales y permite controlar parámetros.
+
+---
+
+## 📍 Ubicación del módulo
+
+```
+TradingLatino-main/modulo_scalping/scalping_module.py
+```
+
+```
+
+---
+
+👉 ¿Querés que siga con el de `nadaraya_strategy.py` (el corazón matemático de la estrategia) o preferís que arme primero el de `heikin_confirm.py`?
+```
+

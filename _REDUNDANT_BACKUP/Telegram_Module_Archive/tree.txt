@@ -1,0 +1,59 @@
+.
+├── alert_manager.py
+├── Bot_Capital
+│   ├── api
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   └── __pycache__
+│   │       ├── __init__.cpython-310.pyc
+│   │       └── main.cpython-310.pyc
+│   ├── Arquitectura General.md
+│   ├── config
+│   │   └── example_config.yaml
+│   ├── core
+│   │   ├── __init__.py
+│   │   ├── portfolio.py
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-310.pyc
+│   │   │   ├── portfolio.cpython-310.pyc
+│   │   │   └── signals.cpython-310.pyc
+│   │   ├── signals_handler.py
+│   │   └── signals.py
+│   ├── __init__.py
+│   ├── notebooks
+│   ├── __pycache__
+│   │   └── __init__.cpython-310.pyc
+│   ├── README.md
+│   ├── requirements.txt
+│   ├── scripts
+│   │   └── run_simulator.py
+│   ├── signals_handler.py
+│   └── WalletEngine
+│       ├── config_example.yaml
+│       ├── data_oracle
+│       │   └── bingx_source.py
+│       ├── estimator
+│       ├── executor
+│       ├── harvest_scheduler
+│       ├── __init__.py
+│       ├── ledger
+│       ├── position_sizer
+│       ├── README.md
+│       ├── simulator
+│       └── wallet_engine_skeleton.py
+├── estructura.txt
+├── __init__.py
+├── poll_bot.py
+├── __pycache__
+│   ├── alert_manager.cpython-310.pyc
+│   ├── __init__.cpython-310.pyc
+│   ├── poll_bot.cpython-310.pyc
+│   ├── send_test.cpython-310.pyc
+│   └── telegram_helper.cpython-310.pyc
+├── send_test.py
+├── telegram_checklist.md
+├── telegram_helper.py
+├── telegram_module_readme.md
+└── tree.txt
+
+18 directories, 38 files

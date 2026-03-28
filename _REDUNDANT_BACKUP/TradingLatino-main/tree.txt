@@ -1,0 +1,338 @@
+.
+├── 1234scalping_module.py
+├── app.py
+├── backtesting.py
+├── build_render.sh
+├── build.sh
+├── config
+│   └── project_summary.json
+├── config.py
+├── debug_binance.py
+├── enhanced_app.py
+├── enhanced_config.py
+├── enhanced_setup.py
+├── Flujo Ejecución - Scalping.md
+├── logs
+│   ├── analysis.log
+│   ├── binance.log
+│   ├── errors.log
+│   ├── logs
+│   │   ├── merino_analysis.log
+│   │   ├── merino_binance.log
+│   │   ├── merino_signals.log
+│   │   ├── merino_trades.log
+│   │   ├── merino_trading_app.log
+│   │   └── merino_websocket.log
+│   ├── trading_app.log
+│   └── websocket.log
+├── models
+│   ├── enhanced_trading_model.py
+│   ├── __init__.py
+│   ├── __pycache__
+│   │   ├── enhanced_trading_model.cpython-310.pyc
+│   │   ├── __init__.cpython-310.pyc
+│   │   └── trading_analysis.cpython-310.pyc
+│   └── trading_analysis.py
+├── modulo_scalping
+│   ├── heikin_confirm.py
+│   ├── __init__.py
+│   ├── nadaraya_strategy.py
+│   ├── __pycache__
+│   │   ├── heikin_confirm.cpython-310.pyc
+│   │   ├── __init__.cpython-310.pyc
+│   │   ├── nadaraya_strategy.cpython-310.pyc
+│   │   └── scalping_module.cpython-310.pyc
+│   └── scalping_module.py
+├── node_modules
+│   ├── debug
+│   │   ├── LICENSE
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── src
+│   │       ├── browser.js
+│   │       ├── common.js
+│   │       ├── index.js
+│   │       └── node.js
+│   ├── engine.io-client
+│   │   ├── build
+│   │   │   ├── cjs
+│   │   │   │   ├── browser-entrypoint.d.ts
+│   │   │   │   ├── browser-entrypoint.js
+│   │   │   │   ├── contrib
+│   │   │   │   ├── globals.d.ts
+│   │   │   │   ├── globals.js
+│   │   │   │   ├── globals.node.d.ts
+│   │   │   │   ├── globals.node.js
+│   │   │   │   ├── index.d.ts
+│   │   │   │   ├── index.js
+│   │   │   │   ├── package.json
+│   │   │   │   ├── socket.d.ts
+│   │   │   │   ├── socket.js
+│   │   │   │   ├── transport.d.ts
+│   │   │   │   ├── transport.js
+│   │   │   │   ├── transports
+│   │   │   │   ├── util.d.ts
+│   │   │   │   └── util.js
+│   │   │   ├── esm
+│   │   │   │   ├── browser-entrypoint.d.ts
+│   │   │   │   ├── browser-entrypoint.js
+│   │   │   │   ├── contrib
+│   │   │   │   ├── globals.d.ts
+│   │   │   │   ├── globals.js
+│   │   │   │   ├── globals.node.d.ts
+│   │   │   │   ├── globals.node.js
+│   │   │   │   ├── index.d.ts
+│   │   │   │   ├── index.js
+│   │   │   │   ├── package.json
+│   │   │   │   ├── socket.d.ts
+│   │   │   │   ├── socket.js
+│   │   │   │   ├── transport.d.ts
+│   │   │   │   ├── transport.js
+│   │   │   │   ├── transports
+│   │   │   │   ├── util.d.ts
+│   │   │   │   └── util.js
+│   │   │   └── esm-debug
+│   │   │       ├── browser-entrypoint.d.ts
+│   │   │       ├── browser-entrypoint.js
+│   │   │       ├── contrib
+│   │   │       ├── globals.d.ts
+│   │   │       ├── globals.js
+│   │   │       ├── globals.node.d.ts
+│   │   │       ├── globals.node.js
+│   │   │       ├── index.d.ts
+│   │   │       ├── index.js
+│   │   │       ├── package.json
+│   │   │       ├── socket.d.ts
+│   │   │       ├── socket.js
+│   │   │       ├── transport.d.ts
+│   │   │       ├── transport.js
+│   │   │       ├── transports
+│   │   │       ├── util.d.ts
+│   │   │       └── util.js
+│   │   ├── dist
+│   │   │   ├── engine.io.esm.min.js
+│   │   │   ├── engine.io.esm.min.js.map
+│   │   │   ├── engine.io.js
+│   │   │   ├── engine.io.js.map
+│   │   │   ├── engine.io.min.js
+│   │   │   └── engine.io.min.js.map
+│   │   ├── LICENSE
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── engine.io-parser
+│   │   ├── build
+│   │   │   ├── cjs
+│   │   │   │   ├── encodePacket.js
+│   │   │   │   ├── index.d.ts
+│   │   │   │   ├── index.js
+│   │   │   │   └── package.json
+│   │   ├── LICENSE
+│   │   ├── package.json
+│   │   └── Readme.md
+│   ├── ms
+│   │   ├── index.js
+│   │   ├── license.md
+│   │   ├── package.json
+│   │   └── readme.md
+│   ├── @socket.io
+│   │   └── component-emitter
+│   │       ├── lib
+│   │       │   ├── cjs
+│   │       │   └── esm
+│   │       ├── LICENSE
+│   │       ├── package.json
+│   │       └── Readme.md
+│   ├── socket.io-client
+│   │   ├── build
+│   │   │   ├── cjs
+│   │   │   │   ├── browser-entrypoint.d.ts
+│   │   │   │   ├── browser-entrypoint.js
+│   │   │   │   ├── contrib
+│   │   │   │   ├── index.d.ts
+│   │   │   │   ├── index.js
+│
+│   │   ├── dist
+│   │   │   ├── socket.io.esm.min.js
+│   │   │   ├── socket.io.esm.min.js.map
+│   │   │   ├── socket.io.js
+│   │   │   ├── socket.io.js.map
+│   │   │   ├── socket.io.min.js
+│   │   │   ├── socket.io.min.js.map
+│   │   │   ├── socket.io.msgpack.min.js
+│   │   │   └── socket.io.msgpack.min.js.map
+│   │   ├── LICENSE
+│   │   ├── package.json
+│   │   └── README.md
+│   ├── socket.io-parser
+│   │   ├── build
+│   │   │   ├── cjs
+│   │   │   │   ├── binary.d.ts
+│   │   │   │   ├── binary.js
+│   │   │   │   ├── index.d.ts
+│   │   │   │   ├── index.js
+│   │   │   │   ├── is-binary.d.ts
+│   │   │   │   ├── is-binary.js
+│   │   │   │   └── package.json
+│   │   │   ├── esm
+│   │   │   │   ├── binary.d.ts
+│   │   │   │   ├── binary.js
+│   │   │   │   ├── index.d.ts
+│   │   │   │   ├── index.js
+│   │   │   │   ├── is-binary.d.ts
+│   │   │   │   ├── is-binary.js
+│   │   │   │   └── package.json
+│   │   │   └── esm-debug
+│   │   │       ├── binary.d.ts
+│   │   │       ├── binary.js
+│   │   │       ├── index.d.ts
+│   │   │       ├── index.js
+│   │   │       ├── is-binary.d.ts
+│   │   │       ├── is-binary.js
+│   │   │       └── package.json
+│   │   ├── LICENSE
+│   │   ├── package.json
+│   │   └── Readme.md
+│   ├── ws
+│   │   ├── browser.js
+│   │   ├── index.js
+│   │   ├── lib
+│   │   │   ├── buffer-util.js
+│   │   │   ├── constants.js
+│   │   │   ├── event-target.js
+│   │   │   ├── extension.js
+│   │   │   ├── limiter.js
+│   │   │   ├── permessage-deflate.js
+│   │   │   ├── receiver.js
+│   │   │   ├── sender.js
+│   │   │   ├── stream.js
+│   │   │   ├── subprotocol.js
+│   │   │   ├── validation.js
+│   │   │   ├── websocket.js
+│   │   │   └── websocket-server.js
+│   │   ├── LICENSE
+│   │   ├── package.json
+│   │   ├── README.md
+│   │   └── wrapper.mjs
+│   └── xmlhttprequest-ssl
+│       ├── lib
+│       │   └── XMLHttpRequest.js
+│       ├── LICENSE
+│       ├── package.json
+│       └── README.md
+├── package.json
+├── package-lock.json
+├── __pycache__
+│   ├── config.cpython-310.pyc
+│   ├── enhanced_config.cpython-310.pyc
+│   ├── run_scalping.cpython-310.pyc
+│   ├── scalping_module.cpython-310.pyc
+│   └── telegram_helper.cpython-310.pyc
+├── README.md
+├── render.yml
+├── requirements.txt
+├── run.bat
+├── run_merino.bat
+├── run_merino.sh
+├── run_scalping.py
+├── runtime.txt
+├── send_signals.py
+├── services
+│   ├── analysis_service.py
+│   ├── binance_service.py
+│   ├── enhanced_analysis_service.py
+│   ├── enhanced_indicators.py
+│   ├── indicators.py
+│   ├── __init__.py
+│   ├── integrations >>>> aca esta el puente a NEXT
+│   │   ├── __init__.py
+│   │   ├── next_bridge.py >>> este es el archivo
+│   │   ├── Old
+│   │   │   └── next_bridge.py >>> este fue echo para test
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-310.pyc
+│   │   │   └── next_bridge.cpython-310.pyc
+│   │   └── README.md
+│   ├── JaimeMerinoIndicators.py
+│   └── __pycache__
+│       ├── binance_service.cpython-310.pyc
+│       ├── enhanced_analysis_service.cpython-310.pyc
+│       ├── enhanced_indicators.cpython-310.pyc
+│       └── __init__.cpython-310.pyc
+├── setup.py
+├── static
+│   ├── css
+│   │   ├── merino_dashboard.css
+│   │   └── styles.css
+│   └── js
+│       ├── client.js
+│       └── merino_dashboard.js
+├── Telegram >>> ahora nop esta funcionando, pero no se si es por un problema de que las señales no se complen o porque se rompio el flujo
+│   ├── 1poll_bot.py
+│   ├── alert_manager.py >>>> este es el filtro para que no me llene de señales
+│   ├── Bot_Capital >>> este es un bot que en futuras intervenciones va a manejar el portafolio de distribucion Scalping/Swing/Intradia
+│   │   ├── api
+│   │   │   ├── __init__.py
+│   │   │   ├── main.py
+│   │   │   └── __pycache__
+│   │   │       ├── __init__.cpython-310.pyc
+│   │   │       └── main.cpython-310.pyc
+│   │   ├── Arquitectura General.md
+│   │   ├── core
+│   │   │   ├── __init__.py
+│   │   │   ├── portfolio.py
+│   │   │   ├── __pycache__
+│   │   │   │   ├── __init__.cpython-310.pyc
+│   │   │   │   ├── portfolio.cpython-310.pyc
+│   │   │   │   └── signals.cpython-310.pyc
+│   │   │   ├── signals_handler.py
+│   │   │   └── signals.py
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   └── __init__.cpython-310.pyc
+│   │   └── signals_handler.py
+│   ├── __init__.py
+│   ├── poll_bot.py
+│   ├── __pycache__
+│   │   ├── alert_manager.cpython-310.pyc
+│   │   ├── __init__.cpython-310.pyc
+│   │   ├── poll_bot.cpython-310.pyc
+│   │   ├── send_test.cpython-310.pyc
+│   │   └── telegram_helper.cpython-310.pyc
+│   ├── send_test.py
+│   ├── telegram_checklist.md
+│   ├── telegram_helper.py
+│   └── telegram_module_readme.md
+├── templates
+│   ├── index.html
+│   └── merino_dashboard.html >>> solo muestra en % de las señales para entrar en long o short
+├── test_price.py
+├── tests             >>>> aca estan todos los test que se hicieron, NO HACE FALTA HACER MAS, CUALQUIERO COSA SIRVEN COMO HERRAMIENTAS
+│   ├── __init__.py
+│   ├── test_analysis.py
+│   └── test_websocket.py
+├── test_scalping.py
+├── test_signal.py
+├── test-socket.js
+├── tree.txt
+├── utils
+│   ├── __init__.py
+│   ├── json_utils.py
+│   ├── logger.py
+│   ├── __pycache__
+│   │   ├── __init__.cpython-310.pyc
+│   │   ├── json_utils.cpython-310.pyc
+│   │   └── logger.cpython-310.pyc
+│   └── validators.py
+├── venv
+│   ├── bin
+│   .......   
+└── websocket
+    ├── enhanced_socket_handlers.py
+    ├── __init__.py
+    ├── __pycache__
+    │   ├── enhanced_socket_handlers.cpython-310.pyc
+    │   └── __init__.cpython-310.pyc
+    ├── socket_events.py
+    └── socket_handlers.py
+
+227 directories, 345 files

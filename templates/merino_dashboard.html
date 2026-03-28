@@ -1,0 +1,425 @@
+{% extends "base.html" %}
+{% block title %}🛰️ Radar Mico Station{% endblock %}
+{% block head %}
+    <style>
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            margin: 0;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
+        }
+
+        .header p {
+            color: var(--text-dim);
+            margin-top: 5px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .symbol-name {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .price {
+            font-size: 1.1rem;
+            color: var(--green);
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+        }
+
+        .signal-badge {
+            display: block;
+            padding: 8px;
+            border-radius: 6px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .signal-LONG {
+            background: rgba(0, 255, 115, 0.15);
+            color: var(--color-long);
+            border: 1px solid var(--color-long);
+        }
+
+        .signal-SHORT {
+            background: rgba(255, 51, 102, 0.15);
+            color: var(--color-short);
+            border: 1px solid var(--color-short);
+        }
+
+        .signal-WAIT {
+            background: rgba(245, 176, 65, 0.15);
+            color: var(--color-wait);
+            border: 1px solid var(--color-wait);
+        }
+
+        .strategy-badge {
+            display: inline-block;
+            background: rgba(0, 242, 255, 0.1);
+            color: #00f2ff;
+            border: 1px solid rgba(0, 242, 255, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-right: 4px;
+            margin-bottom: 4px;
+        }
+
+        .main-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .metric-box {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .m-title {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .m-value {
+            font-size: 0.95rem;
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .m-sub {
+            font-size: 0.75rem;
+            margin-top: 5px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .symbol-link { text-decoration: none; color: inherit; }
+        .header-right { display: flex; align-items: center; gap: 8px; }
+        .tf-selector { background: #111; color: var(--text-main); border: 1px solid var(--border); padding: 2px 5px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; }
+        .price-val { color: var(--green); font-weight: 800; font-size: 1.1rem; }
+
+        .signal-badge {
+            display: block;
+            padding: 6px;
+            border-radius: 6px;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+        }
+
+        .risk-title { text-align: center; color: var(--accent); font-weight: 800; margin-bottom: 12px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
+
+        .bg-bull { background: rgba(0, 255, 115, 0.08); color: var(--green); }
+        .bg-bear { background: rgba(255, 51, 102, 0.08); color: var(--red); }
+        .bg-alert { background: rgba(255, 215, 0, 0.12); color: var(--accent); }
+
+        .risk-section {
+            background: rgba(255, 215, 0, 0.03);
+            border: 1px solid rgba(255, 215, 0, 0.15);
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 12px;
+        }
+
+        .level-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+        }
+
+        .val-target {
+            color: #00bfff;
+            font-weight: bold;
+        }
+
+        .val-stop {
+            color: #ff1744;
+            font-weight: bold;
+        }
+
+        .val-entry {
+            color: #00e676;
+            font-weight: bold;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            margin: 10% auto;
+            padding: 30px;
+            border: 1px solid var(--accent);
+            width: 380px;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+        }
+
+        .modal-header { font-size: 1.5rem; font-weight: bold; color: var(--accent); margin-bottom: 20px; text-align: center; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 0.85rem; color: #888; margin-bottom: 5px; }
+        .form-group input { width: 100%; padding: 12px; background: #000; border: 1px solid var(--border-color); color: #fff; border-radius: 8px; box-sizing: border-box; font-family: monospace; font-size: 1rem; }
+        
+        .modal-btns { display: flex; gap: 10px; margin-top: 25px; }
+        .btn-confirm { flex: 1.5; background: var(--accent); color: #000; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-confirm:hover { background: #fff; transform: scale(1.02); }
+        .btn-cancel { flex: 1; background: transparent; color: #888; border: 1px solid #444; padding: 14px; border-radius: 8px; cursor: pointer; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div style="padding: 24px;">
+    <div class="header">
+        <h1>🛰️ Mico Station - Institutional Radar</h1>
+        <p>Binance Spot | Multi-Strategy Multi-Timeframe Confluence</p>
+    </div>
+
+    <div class="dashboard-grid">
+        {% for symbol, data in symbols_data.items() %}
+        <div class="mico-card">
+            <div class="card-header">
+                <a href="/chart/{{ symbol }}?tf=4h" target="_blank" class="symbol-link" id="link-{{ symbol }}">
+                    <h2 class="symbol-name">{{ symbol }} 🔗</h2>
+                </a>
+                <div class="header-right">
+                    <select id="tf-{{ symbol }}" class="tf-selector"
+                        onchange="document.getElementById('link-{{ symbol }}').href = '/chart/{{ symbol }}?tf=' + this.value">
+                        <option value="15m">15m</option>
+                        <option value="1h">1h</option>
+                        <option value="4h" selected>4h</option>
+                        <option value="1d">1d</option>
+                    </select>
+                    <div class="price-val">${{ data.current_price }}</div>
+                </div>
+            </div>
+
+            <div class="signal-badge signal-{{ data.signal.signal }}">
+                {{ data.signal.signal }} (Confianza: {{ data.signal.signal_strength }}%)
+            </div>
+
+            <div class="active-strategies" style="margin-top: 10px; min-height: 26px;">
+                {% for strat in data.active_strategies %}
+                <span class="strategy-badge">🎯 {{ strat }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="main-metrics">
+                <div class="metric-box">
+                    <div class="m-title">Koncorde & Whale</div>
+                    <div class="m-value">{{ data.signal.whale_alert }}</div>
+                    <div class="m-sub bg-alert">👐 Manos Fuertes: {{ data.signal.koncorde.strong_hands }}</div>
+                </div>
+
+                <div class="metric-box">
+                    <div class="m-title">Nadaraya-Watson</div>
+                    <div class="m-value">T: ${{ data.indicators.nadaraya.upper if data.indicators and data.indicators.nadaraya else '0' }}</div>
+                    <div class="m-value" style="color: #888;">B: ${{ data.indicators.nadaraya.lower if data.indicators and data.indicators.nadaraya else '0' }}</div>
+                    <div class="m-sub bg-alert">{{ data.indicators.nadaraya.status if data.indicators and
+                        data.indicators.nadaraya else 'BUSCANDO...' }}</div>
+                </div>
+
+                <div class="metric-box">
+                    <div class="m-title">Order Blocks</div>
+                    <div class="m-value" style="color: var(--green);">BULL: ${{ data.trading_levels.order_blocks.bullish_ob_price }}</div>
+                    <div class="m-value" style="color: var(--red);">BEAR: ${{ data.trading_levels.order_blocks.bearish_ob_price }}</div>
+                </div>
+
+                <div class="metric-box">
+                    <div class="m-title">Tendencia & ADX</div>
+                    <div class="m-value">ADX: {{ data.indicators.adx.value if data.indicators and data.indicators.adx
+                        else '0' }}</div>
+                    <div
+                        class="m-sub {% if data.signal and data.signal.bias == 'BULLISH' %}bg-bull{% else %}bg-bear{% endif %}">
+                        {{ data.signal.bias if data.signal else '---' }}</div>
+                </div>
+            </div>
+
+            <div class="risk-section">
+                <div class="risk-title">🛡️ Protocolo de Gestión de Riesgo</div>
+                <div class="level-row">
+                    <span>Apalancamiento Sugerido:</span>
+                    <span style="color: #fff; font-weight: bold;">{{ data.risk_management.recommended_leverage }}</span>
+                </div>
+                <div class="level-row">
+                    <span>Invalidación (EMA 11):</span>
+                    <span style="color: #fbc02d;">${{ data.risk_management.invalidation_ema_11 }}</span>
+                </div>
+                <div class="level-row">
+                    <span>Entrada / SL:</span>
+                    <span class="val-entry">${{ data.trading_levels.entry_optimal }}</span> / <span class="val-stop">${{
+                        data.trading_levels.stop_loss }}</span>
+                </div>
+                <div class="level-row">
+                    <span>Profit Targets:</span>
+                    <span class="val-target">${{ data.trading_levels.targets | join(' / $') }}</span>
+                </div>
+            </div>
+
+            <button class="manual-btn" onclick="openManualModal('{{ symbol }}', {{ data.current_price }}, {{ data.trading_levels.targets[0] }}, {{ data.trading_levels.stop_loss }})"
+                style="width: 100%; margin-top: 12px; background: rgba(255, 255, 255, 0.03); color: #fff; border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s; font-size: 0.8rem;"
+                onmouseover="this.style.background='var(--accent)'; this.style.color='#000'; this.style.borderColor='var(--accent)'"
+                onmouseout="this.style.background='rgba(255, 255, 255, 0.03)'; this.style.color='#fff'; this.style.borderColor='rgba(255, 255, 255, 0.1)'">
+                ⚡ EJECUCIÓN MANUAL
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="footer">
+        <p>🎯 "El trading es el arte de esperar por la señal del dinero institucional" | Actualizado: {% if symbols_data
+            %}{{ symbols_data.values()|list|first|attr('last_update') }}{% else %}Conectando...{% endif %}</p>
+    </div>
+
+    <!-- Manual Trade Modal -->
+    <div id="manualModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">⚡ Orden Manual OCO</div>
+            <div class="form-group">
+                <label>Símbolo</label>
+                <input type="text" id="m-symbol" readonly style="opacity: 0.6;">
+            </div>
+            <div class="form-group">
+                <label>Monto a Invertir (USDT)</label>
+                <input type="number" id="m-amount" value="11">
+            </div>
+            <div class="form-group">
+                <label>Precio Entrada (Ref)</label>
+                <input type="number" id="m-entry" step="0.0001">
+            </div>
+            <div class="form-group">
+                <label>Take Profit (Target)</label>
+                <input type="number" id="m-tp" step="0.0001">
+            </div>
+            <div class="form-group">
+                <label>Stop Loss (Protección)</label>
+                <input type="number" id="m-sl" step="0.0001">
+            </div>
+            <div class="modal-btns">
+                <button class="btn-cancel" onclick="closeModal()">CANCELAR</button>
+                <button class="btn-confirm" onclick="submitManualTrade()">CONFIRMAR OCO</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        // Auto-refresh every 30 seconds
+        let isModalOpen = false;
+        setTimeout(() => { if(!isModalOpen) window.location.reload(); }, 30000);
+
+        function openManualModal(symbol, price, tp, sl) {
+            isModalOpen = true;
+            document.getElementById('m-symbol').value = symbol;
+            document.getElementById('m-entry').value = price;
+            document.getElementById('m-tp').value = tp;
+            document.getElementById('m-sl').value = sl;
+            document.getElementById('manualModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            isModalOpen = false;
+            document.getElementById('manualModal').style.display = 'none';
+        }
+
+        function submitManualTrade() {
+            const data = {
+                symbol: document.getElementById('m-symbol').value,
+                amount: document.getElementById('m-amount').value,
+                tp: document.getElementById('m-tp').value,
+                sl: document.getElementById('m-sl').value
+            };
+
+            if(!confirm(`¿Confirmas la compra de ${data.amount} USDT en ${data.symbol} con SL en ${data.sl}?`)) return;
+
+            const btn = document.querySelector('.btn-confirm');
+            btn.innerHTML = 'PROCESANDO...';
+            btn.disabled = true;
+
+            fetch('/manual_trade', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(res => {
+                if(res.success) {
+                    alert('🚀 Trade ejecutado con éxito. Redirigiendo a Activas...');
+                    window.location.href = '/activas';
+                } else {
+                    alert('❌ Error: ' + res.error);
+                    btn.innerHTML = 'CONFIRMAR OCO';
+                    btn.disabled = false;
+                }
+            })
+            .catch(err => {
+                alert('🚨 Error de conexión');
+                btn.innerHTML = 'CONFIRMAR OCO';
+                btn.disabled = false;
+            });
+        }
+    </script>
+{% endblock %}

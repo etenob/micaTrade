@@ -1,0 +1,85 @@
+#modulo_scalping/scalping_bridge.py
+
+🌉 Scalping Bridge – Jaime Merino Bot  
+
+Este módulo actúa como **puente entre la estrategia de scalping (backend Python) y el frontend (Next.js)**.  
+Se encarga de:  
+- Obtener velas de Binance.  
+- Procesar señales con **NadarayaStrategy** y confirmar con **HeikinConfirm**.  
+- Formatear los datos en JSON para que el frontend pueda graficar velas, curvas y señales en tiempo real.  
+- Permitir **ajustes dinámicos de parámetros** enviados desde Next.js.  
+
+---
+
+## 🚀 Funciones principales
+
+### `dynamic_params`
+Diccionario con parámetros de estrategia que se pueden modificar en tiempo real desde el panel de control (Next.js).  
+Incluye:  
+- `h`, `r`, `lag` → parámetros de Nadaraya.  
+- `atr_length`, `atr_mult` → filtros de volatilidad.  
+- `rsi_length` → filtro de tendencia.  
+- `ema_length` → para confirmación Heikin.  
+
+---
+
+### `update_params(new_params: dict)`
+Actualiza dinámicamente los parámetros en `dynamic_params`.  
+Se usa desde Next.js vía endpoint `/api/params`.  
+
+---
+
+### `scalping_realtime(symbol="BTCUSDT", interval="5m", limit=200)`
+Flujo principal que devuelve JSON para Next.js.  
+
+Pasos:  
+1. **Obtener velas** desde Binance vía `binance_service`.  
+2. Convertir a DataFrame y normalizar tipos.  
+3. Calcular **señal Nadaraya** con `NadarayaStrategy`.  
+4. Generar **curva suavizada** para graficar en el frontend.  
+5. Calcular **Heikin Ashi** y confirmar señal con `HeikinConfirm`.  
+6. Armar estructura final con:  
+   - `candles` → velas OHLC  
+   - `heikin_raw` → velas Heikin  
+   - `nadaraya_raw` → curva suavizada  
+   - `signal` → `LONG` / `SHORT` / `None`  
+   - `symbol`, `interval`, `timestamp`  
+
+---
+
+## 📊 Ejemplo de uso
+
+```python
+from modulo_scalping.scalping_bridge import scalping_realtime
+
+data = scalping_realtime("BTCUSDT", interval="5m")
+print(data["signal"], data["candles"][-1])
+Salida típica:
+
+json
+Copiar código
+{
+  "candles": [...],
+  "heikin_raw": [...],
+  "nadaraya_raw": [...],
+  "signal": "LONG",
+  "symbol": "BTCUSDT",
+  "interval": "5m",
+  "timestamp": 1736012500,
+  "success": true
+}
+🧩 Integración
+next_bridge.py → expone endpoints REST y Socket.IO que llaman a scalping_realtime.
+
+RealtimeChart.tsx (Next.js) → consume el JSON para dibujar velas, curvas y señales.
+
+Se comunica en tiempo real con /api/realtime/<symbol> y /api/params.
+
+📍 Ubicación
+bash
+Copiar código
+TradingLatino-main/modulo_scalping/scalping_bridge.py
+yaml
+Copiar código
+
+---

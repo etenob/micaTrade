@@ -1,0 +1,3 @@
+#
+se ejecuta con:
+streamlit run app_binance_csv.py

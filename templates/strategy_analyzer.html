@@ -1,0 +1,690 @@
+{% extends "base.html" %}
+{% block title %}🔬 Analizador — {{ symbol }}{% endblock %}
+{% block head %}
+    <style>
+        /* ── HEADER ── */
+        .header-analizador {
+            background: linear-gradient(135deg, #0d0d1a 0%, #13131f 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .logo { font-size: 1.3rem; font-weight: 900; color: var(--accent); letter-spacing: 1px; }
+        .symbol-badge {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #fff;
+        }
+        .price-tag {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--green);
+        }
+        .coin-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        select, button {
+            background: #1a1a2e;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: border-color .2s;
+        }
+        select:hover, button:hover { border-color: var(--accent); }
+        button {
+            background: linear-gradient(135deg, #0060a0, #0090ff);
+            color: #fff;
+            font-weight: 700;
+            border-color: transparent;
+        }
+        button:hover { opacity: .9; border-color: transparent; }
+
+        nav a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: .85rem;
+            padding: 6px 14px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            transition: color .2s, border-color .2s;
+        }
+        nav a:hover { color: var(--accent); border-color: var(--accent); }
+
+        /* ── MAIN ── */
+        main { max-width: 1400px; margin: 0 auto; padding: 28px 24px; }
+
+        /* ── MULTI-TF BAR ── */
+        .tf-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+        .tf-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 18px;
+            text-align: center;
+        }
+        .tf-card .tf-label {
+            font-size: .75rem;
+            color: var(--text-dim);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+        .tf-card .tf-bias {
+            font-size: 1.2rem;
+            font-weight: 800;
+        }
+        .tf-card .tf-sub { font-size: .8rem; color: var(--muted); margin-top: 4px; }
+        .bullish { color: var(--green); }
+        .bearish { color: var(--red); }
+        .neutral { color: var(--yellow); }
+
+        /* ── STRATEGY GRID ── */
+        .strategies-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+        @media (max-width: 900px) { .strategies-grid { grid-template-columns: 1fr; } }
+
+        .strategy-card {
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            transition: border-color .3s, box-shadow .3s;
+        }
+        .strategy-card.active {
+            border-color: var(--green);
+            box-shadow: 0 0 20px rgba(0,230,118,.2);
+        }
+        .strategy-card.blocked {
+            border-color: var(--red);
+            box-shadow: 0 0 16px rgba(255,23,68,.1);
+        }
+        .strategy-card.warning {
+            border-color: var(--yellow);
+            box-shadow: 0 0 16px rgba(255,215,64,.1);
+        }
+
+        .s-header {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255,255,255,.03);
+            border-bottom: 1px solid var(--border);
+        }
+        .s-name {
+            font-size: 1.2rem;
+            font-weight: 900;
+            letter-spacing: .5px;
+        }
+        .s-status-badge {
+            font-size: .75rem;
+            font-weight: 700;
+            padding: 5px 14px;
+            border-radius: 20px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .badge-go    { background: rgba(0,230,118,.15); color: var(--green); border: 1px solid var(--green); }
+        .badge-stop  { background: rgba(255,23,68,.15);  color: var(--red);   border: 1px solid var(--red); }
+        .badge-wait  { background: rgba(255,215,64,.1);  color: var(--yellow);border: 1px solid var(--yellow); }
+
+        .s-body { padding: 18px 20px; }
+        .s-desc { font-size: .9rem; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
+
+        /* ── INDICATOR ROWS ── */
+        .indicator-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,.05);
+        }
+        .indicator-row:last-child { border-bottom: none; }
+        .ind-left { display: flex; flex-direction: column; gap: 2px; }
+        .ind-name { font-size: .8rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+        .ind-explain { font-size: .75rem; color: rgba(205,214,244,.4); max-width: 280px; line-height: 1.4; }
+        .ind-right { display: flex; align-items: center; }
+
+        /* Badge de valor con fondo semitransparente */
+        .ind-badge {
+            font-size: .9rem;
+            font-weight: 700;
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 6px;
+            min-width: 80px;
+            text-align: center;
+            letter-spacing: .5px;
+        }
+        .ind-ok  { background: rgba(0, 230, 118, 0.18); border: 1px solid rgba(0, 230, 118, 0.4); }
+        .ind-nok { background: rgba(255, 23,  68,  0.18); border: 1px solid rgba(255, 23,  68,  0.4); }
+        .ind-neutral { background: rgba(255,215,64,.12); border: 1px solid rgba(255,215,64,.3); }
+
+        /* Mantener clases legacy por si quedan referencias */
+        .check-dot { display: none; }
+        .dot-green, .dot-red, .dot-yellow { display: none; }
+        .bullish { color: var(--green); }
+        .bearish { color: var(--red); }
+        .neutral { color: var(--yellow); }
+
+        /* ── FOOTER ── */
+        .last-update { text-align: center; color: var(--muted); font-size: .8rem; margin-top: 20px; }
+    </style>
+{% endblock %}
+{% block content %}
+<style>#mico-content { background: var(--bg); }</style>
+
+
+<main>
+<!-- Selector de moneda y precio -->
+<div style="display:flex;align-items:center;gap:20px;padding:16px 24px 0;">
+    <span style="font-size:1.8rem;font-weight:900;color:#fff;">{{ symbol }}</span>
+    <span style="font-size:1.6rem;font-weight:700;color:var(--green);">${{ "%.4f"|format(data.current_price) }}</span>
+    <form method="GET" action="/analizador" style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+        <select name="symbol" style="background:#1a1a2e;border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-size:.9rem;font-family:inherit;cursor:pointer;">
+            {% for sym in symbols %}
+            <option value="{{ sym }}" {% if sym == symbol %}selected{% endif %}>{{ sym.replace('USDT','') }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" style="background:linear-gradient(135deg,#0060a0,#0090ff);color:#fff;font-weight:700;padding:8px 16px;border:none;border-radius:8px;cursor:pointer;">🔍 Analizar</button>
+    </form>
+</div>
+
+    <!-- MULTI-TF BAR -->
+    <div class="tf-bar">
+        {% for tf_name, tf_label in [('15m','⚡ 15m GATILLO'),('1h','⏱ 1H CONFIRM'),('4h','🕒 4H ESTRATEGIA'),('1d','📅 1D MACRO')] %}
+        {% set tf = multi_tf.timeframes.get(tf_name, {}) %}
+        {% set is_bull = 'BULLISH' in tf.get('bias','') %}
+        {% set is_bear = 'BEARISH' in tf.get('bias','') %}
+        <div class="tf-card">
+            <div class="tf-label">{{ tf_label }}</div>
+            {% if tf.get('status') == 'OFFLINE' %}
+            <div class="tf-bias neutral">OFFLINE</div>
+            {% else %}
+            <div class="tf-bias {% if is_bull %}bullish{% elif is_bear %}bearish{% else %}neutral{% endif %}">
+                {{ tf.get('bias','—') }}
+            </div>
+            <div class="tf-sub">ADX: {{ tf.get('strength','—') }} | {{ tf.get('momentum','—') }}</div>
+            {% if tf.get('whale','NO') != 'NO' %}
+            <div class="tf-sub" style="color: var(--purple);">🐳 {{ tf.get('whale') }}</div>
+            {% endif %}
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- STRATEGIES GRID -->
+    <div class="strategies-grid">
+
+        <!-- ═══════════ ALIEN 75 ═══════════ -->
+        {% set a = strategies.alien %}
+        <div class="strategy-card {% if a.triggered %}active{% else %}blocked{% endif %}">
+            <div class="s-header">
+                <div class="s-name">👽 ALIEN_75</div>
+                <div class="s-status-badge {% if a.triggered %}badge-go{% else %}badge-stop{% endif %}">
+                    {% if a.triggered %}✅ DISPARA{% else %}🛑 BLOQUEADA{% endif %}
+                </div>
+            </div>
+            <div class="s-body">
+                <p class="s-desc">La estrategia más conservadora. Sólo entra cuando todos los sistemas confirman una señal institucional con ballenas y tendencia macro alineados.</p>
+                
+                {% set a_conf_ok = data.signal.signal_strength >= 90 %}
+                {% set a_signal_ok = data.signal.signal == 'LONG' %}
+                {% set a_whale_ok = 'BULL' in data.signal.whale_alert %}
+                {% set a_ema_ok = data.current_price > data.indicators.ema.ema_55 %}
+                {% set a_adx_ok = data.indicators.adx.value > 25 %}
+                {% set d1a = multi_tf.timeframes.get('1d', {}) %}
+                {% set a_macro_ok = 'BULLISH' in d1a.get('bias','') %}
+
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">Confianza de Señal</span>
+                        <span class="ind-explain">Debe ser ≥ 90%. Calculado en base a EMA, Squeeze, ADX y Whale.</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if a_conf_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {{ data.signal.signal_strength }}%
+                        </span>
+                    </div>
+                </div>
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">Señal de Fondo</span>
+                        <span class="ind-explain">Dirección del mercado en 4H. Requiere LONG.</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if a_signal_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {{ data.signal.signal }}
+                        </span>
+                    </div>
+                </div>
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">Whale Alert 🐳</span>
+                        <span class="ind-explain">Detección de "Manos Fuertes". Requiere BULL.</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if a_whale_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {{ data.signal.whale_alert | replace('WHALE ','') | replace(' ALIEN 👽','') | replace(' OGRE 👹','') }}
+                        </span>
+                    </div>
+                </div>
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">Precio > EMA 55 (Macro)</span>
+                        <span class="ind-explain">Confirmación de tendencia alcista de largo plazo.</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if a_ema_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {% if a_ema_ok %}POR ENCIMA{% else %}POR DEBAJO{% endif %}
+                        </span>
+                    </div>
+                </div>
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">ADX (Fuerza)</span>
+                        <span class="ind-explain">Requiere fuerza real de movimiento (> 25).</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if a_adx_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {{ "%.1f"|format(data.indicators.adx.value) }}
+                        </span>
+                    </div>
+                </div>
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">Tendencia 1D (Macro)</span>
+                        <span class="ind-explain">Filtro Panorama 360. Debe ser BULLISH.</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if a_macro_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {{ d1a.get('bias','N/A') }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════ TENDENCIA CIEGA ═══════════ -->
+        {% set tc = strategies.tendencia_ciega %}
+        <div class="strategy-card {% if tc.triggered %}active{% else %}blocked{% endif %}">
+            <div class="s-header">
+                <div class="s-name">🦅 TENDENCIA_CIEGA</div>
+                <div class="s-status-badge {% if tc.triggered %}badge-go{% else %}badge-stop{% endif %}">
+                    {% if tc.triggered %}✅ DISPARA{% else %}🛑 BLOQUEADA{% endif %}
+                </div>
+            </div>
+            <div class="s-body">
+                <p class="s-desc">Versión de Alien sin ballenas. Entra por inercia técnica pura (75%+), blindada con 3 escudos anti-FOMO minoristas.</p>
+                
+                {% set tc_conf_ok = data.signal.signal_strength >= 75 %}
+                {% set tc_signal_ok = data.signal.signal == 'LONG' %}
+                {% set tc_adx_ok = data.indicators.adx.value > 20 %}
+                {% set ema55_dist = ((data.current_price / data.indicators.ema.ema_55) - 1) * 100 if data.indicators.ema.ema_55 > 0 else 99 %}
+                {% set techo_dist = ((data.indicators.nadaraya.upper / data.current_price) - 1) * 100 if data.current_price > 0 else 0 %}
+                {% set tc_ema_ok = ema55_dist > 0 and ema55_dist <= 3.0 %}
+                {% set tc_techo_ok = techo_dist >= 2.0 %}
+                {% set tc_rsi_ok = data.indicators.rsi.value < 60 %}
+                {% set d1tc = multi_tf.timeframes.get('1d', {}) %}
+                {% set tc_macro_ok = 'BULLISH' in d1tc.get('bias','') %}
+
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">Confianza de Señal</span>
+                        <span class="ind-explain">Inercia moderada (≥ 75%). Sin ballenas.</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if tc_conf_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {{ data.signal.signal_strength }}%
+                        </span>
+                    </div>
+                </div>
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">Señal de Fondo</span>
+                        <span class="ind-explain">Dirección del mercado en 4H. Requiere LONG.</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if tc_signal_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {{ data.signal.signal }}
+                        </span>
+                    </div>
+                </div>
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">ADX (Fuerza)</span>
+                        <span class="ind-explain">Inercia real (> 20).</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if tc_adx_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {{ "%.1f"|format(data.indicators.adx.value) }}
+                        </span>
+                    </div>
+                </div>
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">🎯 Escudo 1: Banda EMA 55</span>
+                        <span class="ind-explain">Precio sobre EMA pero MÁX 3% alejado.</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if tc_ema_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {{ "%.2f"|format(ema55_dist) }}%
+                        </span>
+                    </div>
+                </div>
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">🛡️ Escudo 2: Aire Limpio (Techo)</span>
+                        <span class="ind-explain">Mínimo 2% de aire hasta el techo Nadaraya.</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if tc_techo_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {{ "%.2f"|format(techo_dist) }}%
+                        </span>
+                    </div>
+                </div>
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">❄️ Escudo 3: RSI (Antifundición)</span>
+                        <span class="ind-explain">Evita euforia. RSI debe ser < 60.</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if tc_rsi_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {{ "%.1f"|format(data.indicators.rsi.value) }}
+                        </span>
+                    </div>
+                </div>
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">Tendencia 1D (Macro)</span>
+                        <span class="ind-explain">Si el Diario es BEARISH, no se opera.</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if tc_macro_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {{ d1tc.get('bias','N/A') }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════ REBOTE ═══════════ -->
+        {% set r = strategies.rebote %}
+        <div class="strategy-card {% if r.triggered %}active{% else %}blocked{% endif %}">
+            <div class="s-header">
+                <div class="s-name">🟢 REBOTE_SUELO</div>
+                <div class="s-status-badge {% if r.triggered %}badge-go{% else %}badge-stop{% endif %}">
+                    {% if r.triggered %}✅ DISPARA{% else %}🛑 BLOQUEADA{% endif %}
+                </div>
+            </div>
+            <div class="s-body">
+                <p class="s-desc">Estrategia de reversión a la media. Compra cuando el precio toca el suelo Nadaraya.</p>
+                
+                {% set dist_nad = ((data.current_price / data.indicators.nadaraya.lower) - 1) * 100 if data.indicators.nadaraya.lower > 0 else -99 %}
+                {% set r_dist_ok = (dist_nad >= -1.0 and dist_nad <= 0.2) %}
+                {% set r_rsi_ok = data.indicators.rsi.value < 35 %}
+                {% set r_nad_status_ok = data.indicators.nadaraya.status == 'EXTREME' %}
+                
+                {# Freno de Emergencia 1H #}
+                {% set h1 = data.multi_tf.get('1h', {}) %}
+                {% set is_panic = (h1.get('adx', 0) > 40 and h1.get('bias','') == 'BEARISH') %}
+                {% set r_safety_ok = not is_panic %}
+
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">Banda Nadaraya (Suelo)</span>
+                        <span class="ind-explain">Precio entre -1% y +0.2% del suelo.</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if r_dist_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {{ "%.2f"|format(dist_nad) }}%
+                        </span>
+                    </div>
+                </div>
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">Freno de Cuchillo (1H)</span>
+                        <span class="ind-explain">Bloquea si hay caída violenta en 1H (ADX > 40).</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if r_safety_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {{ h1.get('bias','-') }} | ADX: {{ "%.1f"|format(h1.get('adx',0)) }}
+                        </span>
+                    </div>
+                </div>
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">Señal de Fondo (4H)</span>
+                        <span class="ind-explain">Opcional para Rebote (Solo Informativo).</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge ind-neutral">
+                            {{ data.signal.signal }}
+                        </span>
+                    </div>
+                </div>
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">RSI (Sobreventa)</span>
+                        <span class="ind-explain">Pánico detectado (RSI < 35).</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if r_rsi_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {{ "%.1f"|format(data.indicators.rsi.value) }}
+                        </span>
+                    </div>
+                </div>
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">Nadaraya Status</span>
+                        <span class="ind-explain">Debe marcar estado EXTREME en las bandas.</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if r_nad_status_ok %}ind-ok{% else %}ind-neutral{% endif %}">
+                            {{ data.indicators.nadaraya.status }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════ GATILLO 11 ═══════════ -->
+        {% set g = strategies.gatillo %}
+        <div class="strategy-card {% if g.triggered %}active{% elif g.warning %}warning{% else %}blocked{% endif %}">
+            <div class="s-header">
+                <div class="s-name">⚡ GATILLO_11</div>
+                <div class="s-status-badge {% if g.triggered %}badge-go{% elif g.warning %}badge-wait{% else %}badge-stop{% endif %}">
+                    {% if g.triggered %}✅ DISPARA{% elif g.warning %}⚠️ ESPERA 15m{% else %}🛑 BLOQUEADA{% endif %}
+                </div>
+            </div>
+            <div class="s-body">
+                <p class="s-desc">Seguimiento de tendencia rápida. Cruce de EMA 11 con momentum.</p>
+                
+                {% set g_conf_ok = data.signal.signal_strength >= 75 %}
+                {% set g_signal_ok = data.signal.signal == 'LONG' %}
+                {% set ema11_dist = ((data.current_price / data.indicators.ema.ema_11) - 1) * 100 if data.indicators.ema.ema_11 > 0 else -99 %}
+                {% set g_ema_ok = (0 < ema11_dist <= 1.0) %}
+                {% set g_rsi_ok = data.indicators.rsi.value < 65 %}
+                {% set g_adx_ok = data.indicators.adx.value > 20 %}
+                {% set h1g = multi_tf.timeframes.get('1h', {}) %}
+                {% set g_momentum_ok = h1g.get('squeeze_trend','') == 'UP' %}
+
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">Confianza ≥ 75%</span>
+                        <span class="ind-explain">Confirmación técnica básica.</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if g_conf_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {{ data.signal.signal_strength }}%
+                        </span>
+                    </div>
+                </div>
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">Señal de Fondo</span>
+                        <span class="ind-explain">Estrategia puramente LONG.</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if g_signal_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {{ data.signal.signal }}
+                        </span>
+                    </div>
+                </div>
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">Precio > EMA 11</span>
+                        <span class="ind-explain">Cruce activo (0% a 1% de distancia).</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if g_ema_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {{ "%.2f"|format(ema11_dist) }}%
+                        </span>
+                    </div>
+                </div>
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">RSI (Moderado)</span>
+                        <span class="ind-explain">Debe ser inferior a 65.</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if g_rsi_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {{ "%.1f"|format(data.indicators.rsi.value) }}
+                        </span>
+                    </div>
+                </div>
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">ADX (Tendencia)</span>
+                        <span class="ind-explain">Fuerza de direccionalidad activa (> 20).</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if g_adx_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {{ "%.1f"|format(data.indicators.adx.value) }}
+                        </span>
+                    </div>
+                </div>
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">Tendencia 1H (Momentum)</span>
+                        <span class="ind-explain">Squeeze en 1H debe estar subiendo (UP).</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if g_momentum_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {{ h1g.get('squeeze_trend', 'N/A') }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════ PING-PONG ═══════════ -->
+        {% set p = strategies.pingpong %}
+        <div class="strategy-card {% if p.triggered %}active{% else %}blocked{% endif %}">
+            <div class="s-header">
+                <div class="s-name">🏓 BLOCK_PINGPONG</div>
+                <div class="s-status-badge {% if p.triggered %}badge-go{% else %}badge-stop{% endif %}">
+                    {% if p.triggered %}✅ DISPARA{% else %}🛑 BLOQUEADA{% endif %}
+                </div>
+            </div>
+            <div class="s-body">
+                <p class="s-desc">Estrategia geométrica. Rebotes en bloques de órdenes (OB).</p>
+                
+                {% set target_ob = data.trading_levels.order_blocks.bullish_ob_price %}
+                {% set ob_dist = ((data.current_price / target_ob) - 1) * 100 if target_ob > 0 else -99 %}
+                {% set p_ob_ok = (-1.0 <= ob_dist <= 0.5) %}
+                {% set p_signal_ok = data.signal.signal == 'LONG' %}
+                {% set p_rsi_ok = data.indicators.rsi.value < 45 %}
+                {% set p_bias_ok = data.signal.bias == 'BULLISH' %}
+                {% set bear_ob = data.trading_levels.order_blocks.bearish_ob_price %}
+                {% set p_target_ok = bear_ob > data.current_price %}
+
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">Bullish Order Block</span>
+                        <span class="ind-explain">Precio cerca de zona de compra institucional.</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if p_ob_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {% if target_ob > 0 %}{{ "%.2f"|format(ob_dist) }}%{% else %}SIN OB{% endif %}
+                        </span>
+                    </div>
+                </div>
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">Señal de Fondo</span>
+                        <span class="ind-explain">Estrategia puramente LONG.</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if p_signal_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {{ data.signal.signal }}
+                        </span>
+                    </div>
+                </div>
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">RSI (Confluencia)</span>
+                        <span class="ind-explain">Entrada moderada (RSI < 45).</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if p_rsi_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {{ "%.1f"|format(data.indicators.rsi.value) }}
+                        </span>
+                    </div>
+                </div>
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">Tendencia 4H (Bias)</span>
+                        <span class="ind-explain">Debe marcar BULLISH en 4 Horas.</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if p_bias_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {{ data.signal.bias }}
+                        </span>
+                    </div>
+                </div>
+                <div class="indicator-row">
+                    <div class="ind-left">
+                        <span class="ind-name">Bearish OB (Techo)</span>
+                        <span class="ind-explain">Verificando espacio hasta la resistencia.</span>
+                    </div>
+                    <div class="ind-right">
+                        <span class="ind-badge {% if p_target_ok %}ind-ok{% else %}ind-nok{% endif %}">
+                            {% if bear_ob > 0 %}CON TECHO{% else %}LIBRE{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /strategies-grid -->
+
+    <div class="last-update">
+        Última actualización: {{ data.last_update }} · Temporalidad base: 4H · Auto-refresh cada 30s
+    </div>
+
+</main>
+{% endblock %}
+{% block scripts %}
+<script>setTimeout(() => location.reload(), 30000);</script>
+{% endblock %}
