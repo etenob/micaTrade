@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ symbol }} | Tribunal de Jueces V2</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #05070a;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent: #00f2ff;
+            --success: #00ff88;
+            --warning: #ffbb00;
+            --danger: #ff4444;
+            --text: #ffffff;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            background-image: radial-gradient(circle at 0% 0%, rgba(0, 242, 255, 0.05) 0%, transparent 50%);
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+        }
+
+        .btn-back {
+            color: var(--text);
+            text-decoration: none;
+            opacity: 0.6;
+            font-size: 0.9rem;
+        }
+
+        .btn-back:hover { opacity: 1; }
+
+        .coin-hero {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 3rem;
+        }
+
+        .symbol-title { font-size: 4rem; font-weight: 800; line-height: 1; }
+        .price-large { font-size: 2rem; color: var(--accent); }
+
+        .strategy-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .main-chart {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            height: 500px;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-toggle-overlay {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            padding: 0.3rem;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .toggle-btn {
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.7rem;
+            transition: all 0.3s;
+            border: none;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .toggle-btn.active {
+            background: var(--accent);
+            color: var(--bg);
+        }
+
+        .strategy-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .strat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .strat-name { font-size: 1.5rem; font-weight: 700; }
+        
+        .verdict-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .verdict-ok { background: rgba(0, 255, 136, 0.1); color: var(--success); border: 1px solid var(--success); }
+        .verdict-no { background: rgba(255, 255, 255, 0.05); color: rgba(255, 255, 255, 0.3); border: 1px solid var(--glass-border); }
+
+        .judge-list { list-style: none; padding: 0; margin: 0; }
+
+        .judge-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .judge-item:last-child { border: 0; }
+
+        .judge-info { display: flex; align-items: center; gap: 1rem; }
+        .judge-icon { font-size: 1.2rem; }
+        .judge-name { font-weight: 400; font-size: 1rem; opacity: 0.9; }
+        
+        .judge-values { text-align: right; }
+        .val-current { font-weight: 600; font-size: 1rem; }
+        .val-target { font-size: 0.7rem; opacity: 0.5; display: block; }
+
+        .health-section {
+            margin-top: 3rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 100%);
+            border-radius: 30px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .health-bar-container {
+            height: 12px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+
+        .health-fill { height: 100%; transition: width 1s cubic-bezier(0.17, 0.67, 0.83, 0.67); }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .stat-box {
+            padding: 1rem;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .stat-label { font-size: 0.7rem; opacity: 0.5; text-transform: uppercase; display: block; }
+        .stat-val { font-size: 1.1rem; font-weight: 600; color: var(--accent); }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="/" class="btn-back">← Volver al Radar</a>
+            <div class="logo">MICO TRIBUNAL</div>
+            <a href="/tecnico/{{ symbol }}" class="btn-back" style="color: var(--accent); opacity: 1;">Ver Gráfica Técnica →</a>
+        </header>
+
+        <section class="coin-hero">
+            <div>
+                <div class="symbol-title">{{ symbol.replace('USDT','') }}</div>
+                <div class="price-large">${{ data.current_price }}</div>
+            </div>
+            <div style="text-align: right">
+                <span class="verdict-badge {{ 'verdict-ok' if data.signal.signal == 'LONG' else 'verdict-no' }}">
+                    BIAS ACTUAL: {{ data.signal.signal }}
+                </span>
+                <div style="margin-top: 1rem; opacity: 0.5">Confianza del Mercado: {{ data.signal.signal_strength }}%</div>
+            </div>
+        </section>
+
+        <h2 style="margin-bottom: 2rem; font-weight: 300">Veredicto de las Estrategias</h2>
+        
+        <div class="strategy-container">
+            {% for strat_name, details in strategies.items() %}
+            <article class="strategy-card">
+                <div class="strat-header">
+                    <span class="strat-name">{{ strat_name }}</span>
+                    <span class="verdict-badge {{ 'verdict-ok' if details.triggered else 'verdict-no' }}">
+                        {{ 'DISPARADA' if details.triggered else 'ESPERANDO' }}
+                    </span>
+                </div>
+
+                <ul class="judge-list">
+                    {% for judge in details.judges %}
+                    <li class="judge-item">
+                        <div class="judge-info">
+                            <span class="judge-icon">{{ '✅' if judge.ok else '❌' }}</span>
+                            <span class="judge-name">{{ judge.name }}</span>
+                        </div>
+                        <div class="judge-values">
+                            <span class="val-current" style="color: {{ 'var(--success)' if judge.ok else 'var(--danger)' }}">
+                                {{ judge.val }}
+                            </span>
+                            <span class="val-target">Meta: {{ judge.target }}</span>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </article>
+            {% endfor %}
+        </div>
+
+        <section class="health-section">
+            <h2 style="margin: 0; font-weight: 300">Estado de Salud del Presente (Simulado)</h2>
+            <p style="opacity: 0.5; font-size: 0.9rem;">Qué pasaría si estuviéramos dentro de este trade ahora mismo:</p>
+            
+            <div class="health-bar-container">
+                {% if strategies %}
+                    {% set main_strat = strategies.get('alien') or (strategies.values()|list|first) %}
+                    <div class="health-fill" style="width: {{ main_strat.health_score }}%; background: {{ 'var(--success)' if main_strat.health_score > 70 else 'var(--warning)' if main_strat.health_score > 40 else 'var(--danger)' }}"></div>
+                {% else %}
+                    <div class="health-fill" style="width: 0%; background: var(--glass-border)"></div>
+                {% endif %}
+            </div>
+            <div style="display: flex; justify-content: space-between; font-weight: 800;">
+                {% if strategies %}
+                    {% set main_strat = strategies.get('alien') or (strategies.values()|list|first) %}
+                    <span>SALUD: {{ main_strat.health_score }}%</span>
+                    <span style="color: var(--accent)">ACCIÓN: {{ main_strat.recommendation }}</span>
+                {% else %}
+                    <span>SALUD: --%</span>
+                    <span style="color: var(--warning)">ACCIÓN: ESPERANDO SEÑAL</span>
+                {% endif %}
+            </div>
+
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <span class="stat-label">RSI 15m</span>
+                    <span class="stat-val">{{ data.indicators.rsi.value | round(1) }}</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">ADX</span>
+                    <span class="stat-val">{{ data.indicators.adx.value | round(1) }}</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">EMA 55</span>
+                    <span class="stat-val">${{ data.report.ema_55 }}</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">VOLUMEN</span>
+                    <span class="stat-val" id="volVal">--</span>
+                </div>
+                <div class="stat-box" title="Tiempo de vida de la señal o paciencia restante">
+                    <span class="stat-label">TIEMPO</span>
+                    <span class="stat-val" style="color: #ffaa00;">{{ data.report.time_info or 'N/A' }}</span>
+                </div>
+            </div>
+        </section>
+    </div>
+</body>
+</html>

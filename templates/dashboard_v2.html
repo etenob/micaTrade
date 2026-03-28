@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mico Radar | Lista Táctica</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #030508;
+            --row-bg: rgba(255, 255, 255, 0.02);
+            --row-hover: rgba(0, 242, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.08);
+            --accent: #00f2ff;
+            --success: #00ff88;
+            --warning: #ffbb00;
+            --danger: #ff4444;
+            --text-main: #ffffff;
+            --text-muted: #8892b0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at 50% -20%, rgba(0, 242, 255, 0.1) 0%, transparent 60%);
+        }
+
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border);
+            background: rgba(3, 5, 8, 0.8);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            color: var(--text-main);
+        }
+
+        .status {
+            font-size: 0.8rem;
+            color: var(--success);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .pulse {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse-ani 2s infinite;
+        }
+
+        @keyframes pulse-ani {
+            0% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 255, 136, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0); }
+        }
+
+        .radar-list {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        /* ROW COMPACTA */
+        .list-row {
+            display: grid;
+            grid-template-columns: 140px 180px 280px 1fr 60px;
+            align-items: center;
+            padding: 0.8rem 1.5rem;
+            background: var(--row-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 8px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .list-row:hover {
+            background: var(--row-hover);
+            border-color: rgba(0, 242, 255, 0.3);
+            transform: translateX(4px);
+            box-shadow: -4px 4px 15px rgba(0,0,0,0.5);
+        }
+
+        /* 1: Moneda y Precio */
+        .col-asset {
+            display: flex;
+            flex-direction: column;
+        }
+        .symbol { font-weight: 800; font-size: 1.3rem; letter-spacing: -0.5px; color: var(--text-main); }
+        .price { font-size: 0.95rem; color: var(--accent); font-weight: 400; opacity: 0.9; }
+
+        /* 2: Señal y Confianza */
+        .col-signal {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+        }
+        .direction { 
+            font-weight: 800; 
+            font-size: 1.1rem; 
+            width: 60px;
+        }
+        .dir-long { color: var(--success); }
+        .dir-short { color: var(--danger); }
+        .dir-wait { color: var(--text-muted); opacity: 0.5; }
+
+        .confidence-wrapper {
+            display: flex;
+            flex-direction: column;
+            width: 80px;
+            gap: 4px;
+        }
+        .conf-text { font-size: 0.75rem; letter-spacing: 1px; color: var(--text-main); font-weight: 600;}
+        .conf-bar-bg { width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 100px; overflow: hidden; }
+        .conf-bar-fill { height: 100%; transition: width 0.5s; }
+
+        /* 3: Alertas (VPoC, Squeeze, Whales) */
+        .col-alerts {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .alert-badge {
+            font-size: 0.65rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            letter-spacing: 0.5px;
+        }
+        .alert-vpoc-ok { border-color: rgba(0,255,136,0.3); color: var(--success); }
+        .alert-vpoc-far { border-color: rgba(255,187,0,0.3); color: var(--warning); opacity: 0.7; }
+        
+        .alert-explosion { 
+            border-color: var(--warning); 
+            color: var(--warning); 
+            background: rgba(255,187,0,0.05);
+            animation: text-pulse 1.5s infinite alternate;
+        }
+        
+        .alert-whale {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(0, 242, 255, 0.05);
+            font-weight: 800;
+        }
+
+        @keyframes text-pulse { from {opacity: 1; text-shadow: 0 0 10px rgba(255,187,0,0.5);} to {opacity: 0.5; text-shadow: none;} }
+
+        /* 4: Estrategias / Tribunal */
+        .col-strategies {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+        }
+        .str-badge {
+            font-size: 0.65rem;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        .str-badge.active {
+            background: rgba(0, 255, 136, 0.05);
+            border-color: rgba(0, 255, 136, 0.3);
+            color: var(--success);
+            font-weight: 600;
+        }
+        .str-badge.warning {
+            background: rgba(255, 187, 0, 0.05);
+            border-color: rgba(255, 187, 0, 0.3);
+            color: var(--warning);
+        }
+        .str-badge.danger {
+            background: rgba(255, 68, 68, 0.05);
+            border-color: rgba(255, 68, 68, 0.3);
+            color: var(--danger);
+        }
+        .str-ratio { opacity: 0.6; font-family: monospace; font-size: 0.7rem; }
+        .str-badge.active .str-ratio { opacity: 1; }
+
+        /* 5: Acción */
+        .col-action {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            color: var(--text-muted);
+            opacity: 0.3;
+            transition: opacity 0.2s;
+        }
+        
+        .list-row:hover .col-action {
+            opacity: 1;
+            color: var(--accent);
+        }
+
+        /* Headers de Tabla (Sortables) */
+        .list-header {
+            display: grid;
+            grid-template-columns: 140px 180px 280px 1fr 60px;
+            padding: 0 1.5rem 0.8rem 1.5rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1rem;
+            user-select: none;
+        }
+
+        .sortable {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: color 0.2s;
+        }
+
+        .sortable:hover {
+            color: var(--text-main);
+        }
+
+        .sort-icon {
+            font-size: 0.8rem;
+            opacity: 0.3;
+        }
+
+        .sortable.active .sort-icon {
+            opacity: 1;
+            color: var(--accent);
+        }
+
+        .sortable.active {
+            color: var(--text-main);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-bar">
+        <div class="logo">MICO RADAR <span style="opacity:0.3; font-weight:300">| LISTA TÁCTICA</span></div>
+        <div class="status">
+            <div class="pulse"></div>
+            <span>ANALIZANDO | Última actualizacón: {{ server_time }}</span>
+        </div>
+    </div>
+
+    <div class="radar-list">
+        {% if not radar %}
+            <div style="text-align: center; color: var(--text-muted); margin-top: 5rem;">
+                <div class="pulse" style="display:inline-block; margin-bottom: 1.5rem;"></div>
+                <h2 style="font-weight: 300; letter-spacing: 1px;">Escaneando Activos...</h2>
+                <p style="opacity: 0.5;">El tribunal está deliberando. Aguardá unos segundos.</p>
+            </div>
+        {% else %}
+            <!-- COLUMNAS SORTABLES -->
+            <div class="list-header" id="table-header">
+                <div class="sortable active" data-sort="symbol">Activo <span class="sort-icon">⬆</span></div>
+                <div class="sortable" data-sort="strength">Fuerza & Señal <span class="sort-icon">↕</span></div>
+                <div class="sortable" data-sort="vpoc">Radares de Alerta (VPoC) <span class="sort-icon">↕</span></div>
+                <div class="sortable" data-sort="jueces">Tribunal Jueces <span class="sort-icon">↕</span></div>
+                <div style="text-align: right">Entrar</div>
+            </div>
+
+            <!-- CONTENEDOR DE FILAS -->
+            <div id="radar-rows">
+                {% for coin in radar %}
+                {% set total_jueces = namespace(ok=0) %}
+                {% for name, details in coin.report.items() %}
+                    {% set total_jueces.ok = total_jueces.ok + details.ok %}
+                    {% if details.triggered %}
+                        {% set total_jueces.ok = total_jueces.ok + 100 %}
+                    {% endif %}
+                {% endfor %}
+                <a href="/analisis/{{ coin.symbol }}" class="list-row"
+                   data-symbol="{{ coin.symbol.replace('USDT','') }}"
+                   data-strength="{{ coin.strength }}"
+                   data-vpoc="{{ coin.vpoc.distance_pct }}"
+                   data-jueces="{{ total_jueces.ok }}">
+                    
+                    <!-- 1: Moneda y Precio -->
+                    <div class="col-asset">
+                        <span class="symbol">{{ coin.symbol.replace('USDT','') }}</span>
+                        <span class="price">${{ coin.price }}</span>
+                    </div>
+
+                    <!-- 2: Señal -->
+                    <div class="col-signal">
+                        <span class="direction {{ 'dir-long' if coin.signal == 'LONG' else 'dir-short' if coin.signal == 'SHORT' else 'dir-wait' }}">
+                            {{ coin.signal }}
+                        </span>
+                        <div class="confidence-wrapper">
+                            <span class="conf-text">{{ coin.strength }}% CONF.</span>
+                            <div class="conf-bar-bg">
+                                <div class="conf-bar-fill {{ 'dir-long' if coin.signal == 'LONG' else 'dir-short' if coin.signal == 'SHORT' else 'dir-wait' }}" 
+                                     style="width: {{ coin.strength }}%; background-color: currentColor;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3: Alertas VPoC / Squeeze / Whales -->
+                    <div class="col-alerts">
+                        <!-- VPoC Magnet -->
+                        <div class="alert-badge {{ 'alert-vpoc-ok' if coin.vpoc.in_value_area else 'alert-vpoc-far' }}">
+                            🧲 VPoC {{ coin.vpoc.distance_pct }}%
+                        </div>
+                        
+                        <!-- Explosion Bomb -->
+                        {% if coin.squeeze_on %}
+                            <div class="alert-badge alert-explosion">
+                                🔥 EXPLOSIÓN
+                            </div>
+                        {% endif %}
+
+                        <!-- Whale Alert -->
+                        {% if 'BULL' in coin.whale_display or 'BEAR' in coin.whale_display %}
+                            <div class="alert-badge alert-whale">
+                                {{ coin.whale_display }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- 4: Estrategias Miniaturas -->
+                    <div class="col-strategies">
+                        {% for name, details in coin.report.items() %}
+                            {% set str_name = name.split('_')[0] %}
+                            {% set is_active = details.triggered %}
+                            {% set ratio = (details.ok / details.total) * 100 %}
+                            
+                            <div class="str-badge {{ 'active' if is_active else 'warning' if ratio >= 60 else 'danger' }}">
+                                {{ str_name | upper }} <span class="str-ratio">{{ details.ok }}/{{ details.total }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- 5: Acción -->
+                    <div class="col-action">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </div>
+
+                </a>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- SCRIPT DE ORDENAMIENTO DE LAS FILAS -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const headers = document.querySelectorAll('.sortable');
+            const container = document.getElementById('radar-rows');
+            if(!container) return; // Si estamos en "Escaneando", no hay contenedor
+            
+            // Estado de orden de cada columna (false = ascendente, true = descendente)
+            const sortDirs = {
+                'symbol': false,    // A-Z por defecto
+                'strength': true,   // 100 a 0 por defecto
+                'vpoc': false,      // Mas cercano a 0 por defecto
+                'jueces': true      // Mayor cantidad de jueces aprobatorios
+            };
+
+            headers.forEach(header => {
+                header.addEventListener('click', () => {
+                    const sortKey = header.dataset.sort;
+                    const rows = Array.from(container.querySelectorAll('.list-row'));
+                    const isDesc = sortDirs[sortKey];
+                    
+                    // Resetear estilos e iconos de todos los headers
+                    headers.forEach(h => {
+                        h.classList.remove('active');
+                        h.querySelector('.sort-icon').textContent = '↕';
+                    });
+                    
+                    // Marcar el clicked como activo
+                    header.classList.add('active');
+                    header.querySelector('.sort-icon').textContent = isDesc ? '⬇' : '⬆';
+
+                    // Lógica de ordenamiento HTML
+                    rows.sort((a, b) => {
+                        let valA = a.dataset[sortKey];
+                        let valB = b.dataset[sortKey];
+
+                        if (sortKey === 'symbol') {
+                            // Cadenas alfabéticas
+                            return isDesc ? valB.localeCompare(valA) : valA.localeCompare(valB);
+                        } else if (sortKey === 'strength') {
+                            // Ascendente/Descendente Numérico puro
+                            valA = parseFloat(valA) || 0;
+                            valB = parseFloat(valB) || 0;
+                            return isDesc ? valB - valA : valA - valB;
+                        } else if (sortKey === 'vpoc') {
+                            // Para VPoC, queremos ordenar por distancia ABSOLUTA a cero
+                            // (El que está más cerca de la campana, tiene la mejor trampa)
+                            valA = Math.abs(parseFloat(valA) || 999);
+                            valB = Math.abs(parseFloat(valB) || 999);
+                            return isDesc ? valB - valA : valA - valB;
+                        } else if (sortKey === 'jueces') {
+                            // Para Jueces, suma total matematica de aprobaciones
+                            valA = parseInt(valA) || 0;
+                            valB = parseInt(valB) || 0;
+                            return isDesc ? valB - valA : valA - valB;
+                        }
+                    });
+
+                    // Invertimos la dirección de la columna para la próxima vez que se haga clic
+                    sortDirs[sortKey] = !isDesc;
+
+                    // Reenganchar las filas en el nuevo orden al DOM
+                    rows.forEach(row => container.appendChild(row));
+                });
+            });
+        });
+    </script>
+</body>
+</html>

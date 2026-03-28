@@ -95,11 +95,17 @@ class JaimeMerinoIndicatorsEngine:
         df['ema_11'] = ta.ema(df['Close'], length=11)
         df['ema_55'] = ta.ema(df['Close'], length=55)
         df['rsi'] = ta.rsi(df['Close'], length=14)
+        
+        # Bloque Seguro: ADX
         adx_df = ta.adx(df['High'], df['Low'], df['Close'], length=14)
-        df['adx'] = adx_df[[c for c in adx_df.columns if c.startswith('ADX')][0]]
+        adx_cols = [c for c in adx_df.columns if c.startswith('ADX')] if adx_df is not None else []
+        df['adx'] = adx_df[adx_cols[0]] if adx_cols else 0
+        
+        # Bloque Seguro: Squeeze
         sqz = ta.squeeze(df['High'], df['Low'], df['Close'], lazybear=True)
-        hist_col = [c for c in sqz.columns if c.startswith('SQZ_') and 'ON' not in c and 'OFF' not in c and 'NO' not in c][0]
-        df['squeeze'] = sqz[hist_col]
+        sqz_cols = [c for c in sqz.columns if c.startswith('SQZ_') and 'ON' not in c and 'OFF' not in c] if sqz is not None else []
+        df['squeeze'] = sqz[sqz_cols[0]] if sqz_cols else 0
+        
         return df
 
     @staticmethod
@@ -109,7 +115,8 @@ class JaimeMerinoIndicatorsEngine:
         df_1h_klines = JaimeMerinoIndicatorsEngine.get_binance_klines(symbol, '1h', limit=150)
         df_1d_klines = JaimeMerinoIndicatorsEngine.get_binance_klines(symbol, '1d', limit=150)
 
-        if df_4h_klines.empty:
+        # Blindaje: Si no hay velas Suficientes (mínimo 2 para sqz vs sqz_prev)
+        if df_4h_klines.empty or len(df_4h_klines) < 2:
             price = JaimeMerinoIndicatorsEngine.get_backup_price(symbol)
             return {
                 'symbol': symbol, 'current_price': price, 
@@ -124,6 +131,7 @@ class JaimeMerinoIndicatorsEngine:
                     '1h': {'bias': 'NEUTRAL', 'adx': 0, 'squeeze': 0},
                     '1d': {'bias': 'NEUTRAL', 'adx': 0, 'squeeze': 0}
                 },
+                'report': {'ema_55': 0, 'time_info': 'OFFLINE'},
                 'last_update': datetime.now().strftime('%H:%M:%S')
             }
         
@@ -200,11 +208,15 @@ class JaimeMerinoIndicatorsEngine:
                 'nadaraya': {'upper': round(float(df['upper_band'].iloc[-1]), 4), 'lower': round(float(df['lower_band'].iloc[-1]), 4), 'status': 'OPTIMAL' if df['Close'].iloc[-1] > df['lower_band'].iloc[-1] else 'EXTREME'}
             },
             'multi_tf': multi_tf_data,
+            'report': {
+                'ema_55': round(float(e55), 2),
+                'time_info': 'ESCANEO OK'
+            },
             'last_update': datetime.now().strftime('%H:%M:%S')
         }
 
     @staticmethod
-    def get_chart_html(symbol: str, interval: str = '4h') -> str:
+    def get_chart_html(symbol: str, interval: str = '4h', include_header: bool = True) -> str:
         df_klines = JaimeMerinoIndicatorsEngine.get_binance_klines(symbol, interval, limit=150)
         if df_klines.empty: return f"<h1>Error para {symbol}</h1>"
         df = JaimeMerinoIndicatorsEngine._calculate_indicators(df_klines)
@@ -257,39 +269,44 @@ class JaimeMerinoIndicatorsEngine:
         
         current_price = df['Close'].iloc[-1]
         
-        html_template = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>{symbol} Chart ({interval})</title>
-            <style>
-                body {{ background-color: #111; color: white; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }}
-                .header {{ display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #1a1a2e; border-bottom: 2px solid #0f3460; }}
-                .header-left {{ display: flex; align-items: center; gap: 20px; }}
-                .symbol-title {{ margin: 0; font-size: 1.8rem; font-weight: bold; color: #00f2ff; letter-spacing: 1px; }}
-                .price {{ font-size: 1.4rem; font-weight: bold; color: #00ff88; }}
-                .controls {{ display: flex; align-items: center; gap: 10px; }}
-                select {{ background: #16213e; color: #00f2ff; border: 1px solid #0f3460; padding: 8px 15px; border-radius: 6px; font-size: 1rem; cursor: pointer; font-weight: bold; outline: none; }}
-                select:hover {{ border-color: #00f2ff; }}
-            </style>
-        </head>
-        <body>
+        header_html = f"""
             <div class="header">
                 <div class="header-left">
                     <h1 class="symbol-title">{symbol}</h1>
                     <div class="price">${current_price:.4f}</div>
                 </div>
                 <div class="controls">
-                    <label style="color: #888; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Temporalidad:</label>
-                    <select onchange="window.location.href='/chart/{symbol}?tf=' + this.value">
+                    <label style="color: #888; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">TEMPORALIDAD:</label>
+                    <select onchange="window.location.href='/chart/{symbol}?tf=' + this.value" style="background: #0f3460; color: #fff; border: 1px solid #00f2ff; padding: 5px 12px; border-radius: 6px; font-weight: bold;">
+                        <option value="1m" {"selected" if interval == "1m" else ""}>1m</option>
+                        <option value="5m" {"selected" if interval == "5m" else ""}>5m</option>
                         <option value="15m" {"selected" if interval == "15m" else ""}>15m</option>
                         <option value="1h" {"selected" if interval == "1h" else ""}>1h</option>
                         <option value="4h" {"selected" if interval == "4h" else ""}>4h</option>
                         <option value="1d" {"selected" if interval == "1d" else ""}>1d</option>
+                        <option value="1w" {"selected" if interval == "1w" else ""}>1w</option>
                     </select>
                 </div>
             </div>
-            <div class="chart-container" style="padding-top: 10px;">
+        """ if include_header else ""
+
+        html_template = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>{symbol} Chart ({interval})</title>
+            <style>
+                body {{ background-color: #000; color: white; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }}
+                .header {{ display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: #1a1a2e; border-bottom: 2px solid #0f3460; }}
+                .header-left {{ display: flex; align-items: center; gap: 20px; }}
+                .symbol-title {{ margin: 0; font-size: 1.5rem; font-weight: bold; color: #00f2ff; letter-spacing: 1px; }}
+                .price {{ font-size: 1.2rem; font-weight: bold; color: #00ff88; }}
+                .controls {{ display: flex; align-items: center; gap: 10px; }}
+            </style>
+        </head>
+        <body>
+            {header_html}
+            <div class="chart-container" style="height: {'calc(100vh - 60px)' if include_header else '100vh'};">
                 {chart_div}
             </div>
         </body>

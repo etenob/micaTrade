@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ symbol }} | Estación Técnica V2</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #05070a;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent: #00f2ff;
+            --text: #ffffff;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 1.5rem;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            z-index: 100;
+        }
+
+        .header-left { display: flex; align-items: center; gap: 1.5rem; }
+        .header-right { display: flex; align-items: center; gap: 1rem; }
+
+        .logo { font-size: 1.1rem; font-weight: 800; color: var(--accent); white-space: nowrap; }
+        .symbol-badge { font-weight: 800; font-size: 1.3rem; color: #fff; border-left: 2px solid var(--glass-border); padding-left: 1.5rem; }
+
+        /* Controles */
+        .controls-group {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.2rem;
+            border-radius: 10px;
+            border: 1px solid var(--glass-border);
+            gap: 2px;
+        }
+
+        .btn-ctl {
+            padding: 0.4rem 0.8rem;
+            border-radius: 7px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            border: none;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+        }
+
+        .btn-ctl.active {
+            background: var(--accent);
+            color: var(--bg);
+            box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);
+        }
+
+        .btn-ctl:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+        }
+
+        .btn-nav {
+            color: var(--text);
+            text-decoration: none;
+            opacity: 0.5;
+            font-size: 0.85rem;
+            transition: opacity 0.2s;
+        }
+        .btn-nav:hover { opacity: 1; }
+
+        /* Chart Area */
+        .main-viewport {
+            flex-grow: 1;
+            background: #000;
+            position: relative;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-left">
+            <div class="logo">MICO TEC V2</div>
+            <div class="symbol-badge">{{ symbol.replace('USDT','') }}</div>
+            <div id="priceDisplay" style="color: #00ff88; font-weight: 800; font-size: 1.3rem; margin-left: 1rem;">$0.0000</div>
+            
+            <!-- Selector de Temporalidad Potenciado -->
+            <div class="controls-group" id="tfSelector" style="margin-left: 1.5rem;">
+                <button class="btn-ctl" data-tf="1m">1m</button>
+                <button class="btn-ctl" data-tf="5m">5m</button>
+                <button class="btn-ctl" data-tf="15m">15m</button>
+                <button class="btn-ctl" data-tf="1h">1h</button>
+                <button class="btn-ctl active" data-tf="4h">4h</button>
+                <button class="btn-ctl" data-tf="1d">1d</button>
+                <button class="btn-ctl" data-tf="1w">1w</button>
+            </div>
+        </div>
+
+        <div class="header-right">
+            <!-- Selector de Modo -->
+            <div class="controls-group" id="modeSelector">
+                <button class="btn-ctl" data-mode="tv">TradingView</button>
+                <button class="btn-ctl active" data-mode="native">Mico Nativo</button>
+            </div>
+
+            <nav style="display: flex; gap: 1rem; border-left: 2px solid var(--glass-border); padding-left: 1rem; margin-left: 0.5rem;">
+                <a href="/analisis/{{ symbol }}" class="btn-nav">⚖️ TRIBUNAL</a>
+                <a href="/" class="btn-nav">🛰️ RADAR</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-viewport" id="viewport">
+        <div class="loading-overlay" id="loader">🚀 CARGANDO...</div>
+        <iframe id="mainIframe" src=""></iframe>
+    </main>
+
+    <script>
+        const symbol = "{{ symbol }}";
+        const iframe = document.getElementById('mainIframe');
+        const priceDisplay = document.getElementById('priceDisplay');
+        const tfBtns = document.querySelectorAll('#tfSelector .btn-ctl');
+        const modeBtns = document.querySelectorAll('#modeSelector .btn-ctl');
+
+        async function updatePrice() {
+            try {
+                const response = await fetch('/api/radar');
+                const data = await response.json();
+                const coin = data.find(c => c.symbol === symbol);
+                if (coin) {
+                    priceDisplay.innerText = `$${parseFloat(coin.price).toFixed(4)}`;
+                }
+            } catch (e) { console.error("Error actualizando precio:", e); }
+        }
+
+        function updateChart() {
+            const mode = localStorage.getItem('mico_chart_mode') || 'tv';
+            const tf = localStorage.getItem('mico_chart_tf') || '4h';
+
+            // Actualizar UI de botones
+            tfBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.tf === tf));
+            modeBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
+
+            let url = '';
+            if (mode === 'tv') {
+                let tvInterval = tf;
+                if (tf === '1d') tvInterval = 'D';
+                else if (tf === '1w') tvInterval = 'W';
+                else tvInterval = tf.replace('m', '');
+                
+                url = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_76d51&symbol=BINANCE:${symbol}&interval=${tvInterval}&hidesidetoolbar=1&hidetoptoolbar=1&symboledit=1&saveimage=0&toolbarbg=f1f3f6&studies=[]&theme=dark&style=1&timezone=Etc%2FUTC&studies_overrides={}&overrides={}&enabled_features=[]&disabled_features=[]&locale=es&utm_source=localhost&utm_medium=widget&utm_campaign=chart&utm_term=BINANCE:${symbol}`;
+            } else {
+                url = `/plotly_fragment/${symbol}?tf=${tf}`;
+            }
+
+            if (iframe.src !== url) {
+                iframe.src = url;
+            }
+        }
+
+        // Eventos
+        tfBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                localStorage.setItem('mico_chart_tf', btn.dataset.tf);
+                updateChart();
+            });
+        });
+
+        modeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                localStorage.setItem('mico_chart_mode', btn.dataset.mode);
+                updateChart();
+            });
+        });
+
+        // Inicialización y Bucles
+        updateChart();
+        updatePrice();
+        setInterval(updatePrice, 10000); // Cada 10 seg
+    </script>
+</body>
+</html>
