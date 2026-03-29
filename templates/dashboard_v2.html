@@ -284,6 +284,10 @@
                 <h2 style="font-weight: 300; letter-spacing: 1px;">Escaneando Activos...</h2>
                 <p style="opacity: 0.5;">El tribunal está deliberando. Aguardá unos segundos.</p>
             </div>
+            <script>
+                // Recarga automática mientras el radar inicial está vacío (aprx. dura 2 minutos el scan completo de Binance)
+                setTimeout(() => window.location.reload(), 5000);
+            </script>
         {% else %}
             <!-- COLUMNAS SORTABLES -->
             <div class="list-header" id="table-header">

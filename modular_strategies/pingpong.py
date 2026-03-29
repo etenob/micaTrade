@@ -1,4 +1,4 @@
-from .base import BaseStrategy, Requirement, Trend, Signal, Action
+from .base import BaseStrategy, Requirement, Trend, Signal, Action, Flag
 from datetime import datetime
 
 class PingPongStrategy(BaseStrategy):
@@ -20,12 +20,23 @@ class PingPongStrategy(BaseStrategy):
         dist_ob = ((price / bull_ob) - 1) * 100 if bull_ob > 0 else -99
         
         # El Tribunal de Jueces de PingPong
+        bear_ob = ob['bearish_ob_price']
+        dist_bear = ((bear_ob / price) - 1) * 100 if bear_ob > 0 else 99
+        has_room = bear_ob == 0 or dist_bear > 1.5  # Hay al menos 1.5% de espacio hasta el techo
+        
         self.requirements = [
-            Requirement("Existencia de OB", bull_ob > 0, "SI" if bull_ob > 0 else "NO", "SI"),
-            Requirement("Zona de Rebote OB", (self.params["dist_min"] <= dist_ob <= self.params["dist_max"]), f"{dist_ob:.2f}%", f"[{self.params['dist_min']}%, {self.params['dist_max']}%]"),
-            Requirement("RSI favorable", rsi < self.params["rsi_max"], round(rsi,1), f"< {self.params['rsi_max']}"),
-            Requirement("Confluencia LONG", (sig['signal'] == Signal.LONG and sig['bias'] == Trend.BULLISH), f"{sig['signal']}/{sig['bias']}", "LONG/BULLISH"),
-            Requirement("Área de Valor VPoC", sig.get('volume_profile', {}).get('in_value_area', False), f"{sig.get('volume_profile', {}).get('distance_pct', 0)}%", "< 5%")
+            Requirement("Existencia de OB", bull_ob > 0, Flag.YES if bull_ob > 0 else Flag.NO, Flag.YES,
+                desc="Debe existir un Order Block alcista identificado. ✅ Bloque institucional detectado. ⚠️ Sin bloque: no hay zona de referencia."),
+            Requirement("Zona de Rebote OB", (self.params["dist_min"] <= dist_ob <= self.params["dist_max"]), f"{dist_ob:.2f}%", f"[{self.params['dist_min']}%, {self.params['dist_max']}%]",
+                desc=f"El precio debe estar dentro de la zona exacta del Order Block. ✅ dist entre {self.params['dist_min']}% y {self.params['dist_max']}%. ⚠️ Fuera de zona: el rebote ya empezó o no llegó."),
+            Requirement("RSI favorable", rsi < self.params["rsi_max"], round(rsi,1), f"< {self.params['rsi_max']}",
+                desc=f"RSI sin sobrecompra para que haya recorrido al alza. ✅ RSI < {self.params['rsi_max']}. ⚠️ Sobrecomprado: sin potencial."),
+            Requirement("Confluencia LONG", (sig['signal'] == Signal.LONG and sig['bias'] == Trend.BULLISH), f"{sig['signal']}/{sig['bias']}", "LONG/BULLISH",
+                desc="Señal Merino LONG + sesgo alcista simultáneamente. ✅ LONG + BULLISH. ⚠️ Cualquier otro: sin alineación."),
+            Requirement("🛑 Techo Libre (Bear OB)", has_room, f"+{dist_bear:.1f}%" if bear_ob > 0 else "SIN TECHO", "> +1.5%",
+                desc="Espacio libre hasta el bloque bajista más cercano (ratio R:R). ✅ dist > 1.5% al techo. ⚠️ Techo cerca: sin recorrido, R:R negativo."),
+            Requirement("Área de Valor VPoC", sig.get('volume_profile', {}).get('in_value_area', False), f"{sig.get('volume_profile', {}).get('distance_pct', 0)}%", "< 5%",
+                desc="Confluencia con la zona de mayor volumen histórico. ✅ Dentro del 5% del VPoC. ⚠️ Fuera: sin soporte volumétrico real.")
         ]
 
         is_triggered = all(r.status for r in self.requirements)
@@ -41,6 +52,7 @@ class PingPongStrategy(BaseStrategy):
             "triggered": self.last_check_status,
             "health_score": perf["health_score"],
             "recommendation": perf["recommendation"],
+            "health_judges": perf.get("judges", []),
             "rsi_15m": perf.get("rsi_15m", 0),
             "adx": perf.get("adx", 0),
             "ema_55": perf.get("ema_55", 0),
@@ -68,8 +80,10 @@ class PingPongStrategy(BaseStrategy):
         
         audit_juries = [
             (time_judge, 20),
-            (Requirement("Soporte Institucional (OB)", bull_ob > 0, "SI" if bull_ob > 0 else "NO", "SI"), 80),
-            (Requirement("Zona de Seguridad OB", dist_ob > -1.5, f"{dist_ob:.2f}%", ">-1.5%"), 70)
+            (Requirement("Soporte Institucional (OB)", bull_ob > 0, "SI" if bull_ob > 0 else "NO", "SI",
+                desc="El Order Block alcista sigue activo e identificado.\n✅ OB vigente: estructura institucional intacta.\n⚠️ OB desapareció: la referencia de niveles es inválida, evaluar salida."), 80),
+            (Requirement("Zona de Seguridad OB", dist_ob > -1.5, f"{dist_ob:.2f}%", ">-1.5%",
+                desc="El precio sigue cerca del Order Block (zona de soporte institucional).\n✅ dist > -1.5%: precio aún en zona favorable.\n⚠️ Más abajo: el precio rompió el Order Block, tesis invalidada."), 70)
         ]
 
         # 3. Calcular Salud Dinámica

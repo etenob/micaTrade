@@ -17,16 +17,21 @@ class ReboteStrategy(BaseStrategy):
         h1 = analysis.get('multi_tf', {}).get('1h', {})
         sig = analysis.get('signal', {})
         
-        is_panic = (h1.get('adx', 0) > self.params["h1_adx_crash"] and h1.get('bias','') == Trend.BEARISH)
+        is_panic = (h1.get('adx', h1.get('strength', 0)) > self.params["h1_adx_crash"] and h1.get('bias','') == Trend.BEARISH)
         r_dist_ok = (nad['lower'] * 0.990 <= price <= nad['lower'] * 1.002)
         dist_nad = ((price / nad['lower']) - 1) * 100 if nad['lower'] > 0 else -99
+        adx_1h = h1.get('adx', h1.get('strength', 0))
 
         # El Tribunal de Jueces de Rebote
         self.requirements = [
-            Requirement("Suelo Nadaraya", r_dist_ok, f"{dist_nad:.2f}%", "[-1.0%, +0.2%]"),
-            Requirement("Agotamiento RSI", rsi < self.params["rsi_max"], round(rsi,1), f"< {self.params['rsi_max']}"),
-            Requirement("Freno Pánico 1H", not is_panic, h1.get('bias','-'), "NON-BEAR-CRASH"),
-            Requirement("Área de Valor VPoC", sig.get('volume_profile', {}).get('in_value_area', False), f"{sig.get('volume_profile', {}).get('distance_pct', 0)}%", "< 5%")
+            Requirement("Suelo Nadaraya", r_dist_ok, f"{dist_nad:.2f}%", "[-1.0%, +0.2%]",
+                desc="Precio en zona de reversión extrema según la banda inferior Nadaraya-Watson. ✅ Dentro del -1% al +0.2% del suelo. ⚠️ Alejado: el rebote ya pasó o el soporte se rompió."),
+            Requirement("Agotamiento RSI", rsi < self.params["rsi_max"], round(rsi,1), f"< {self.params['rsi_max']}",
+                desc=f"RSI muy bajo indica que la venta está agotada y el precio está listo para rebotar. ✅ RSI < {self.params['rsi_max']}. ⚠️ RSI alto: no hay capitulación aún."),
+            Requirement("Freno Pánico 1H", not is_panic, f"{h1.get('bias','-')} | ADX: {round(adx_1h, 1)}", "NON-BEAR-CRASH",
+                desc="Verifica que el crash de la vela horaria esté perdiendo fuerza. ✅ Bias no bearish o ADX bajo 40. ⚠️ ADX 1H > 40 con bias BEARISH: pánico institucional activo."),
+            Requirement("Área de Valor VPoC", sig.get('volume_profile', {}).get('in_value_area', False), f"{sig.get('volume_profile', {}).get('distance_pct', 0)}%", "< 5%",
+                desc="Precio dentro de la zona donde hubo mayor interés institucional histórico. ✅ Dentro del 5% del VPoC. ⚠️ Lejos del VPoC: sin soporte de volumen real.")
         ]
         
         is_triggered = all(r.status for r in self.requirements)
@@ -42,6 +47,7 @@ class ReboteStrategy(BaseStrategy):
             "triggered": self.last_check_status,
             "health_score": perf["health_score"],
             "recommendation": perf["recommendation"],
+            "health_judges": perf.get("judges", []),
             "rsi_15m": perf.get("rsi_15m", 0),
             "adx": perf.get("adx", 0),
             "ema_55": perf.get("ema_55", 0),
@@ -64,13 +70,16 @@ class ReboteStrategy(BaseStrategy):
         
         # 2. Definir los Jueces Auditores de Salud (Rehabilitación)
         dist_nad = ((price / nad['lower']) - 1) * 100 if nad['lower'] > 0 else -99
-        is_panic = (h1.get('adx', 0) > self.params["h1_adx_crash"] and h1.get('bias','') == Trend.BEARISH)
+        is_panic = (h1.get('adx', h1.get('strength', 0)) > self.params["h1_adx_crash"] and h1.get('bias','') == Trend.BEARISH)
         
         audit_juries = [
             (time_judge, 20),
-            (Requirement("Suelo Intacto", dist_nad > -2.0, f"{dist_nad:.2f}%", ">-2.0%"), 70),
-            (Requirement("Filtro Pánico 1H", not is_panic, h1.get('bias','-'), "SAFE"), 40),
-            (Requirement("Recuperación RSI", rsi > 40, round(rsi,1), ">40"), 10)
+            (Requirement("Suelo Intacto", dist_nad > -2.0, f"{dist_nad:.2f}%", ">-2.0%",
+                desc="El precio no rompió el suelo Nadaraya durante el trade.\n✅ dist > -2%: soporte vigente.\n⚠️ Rompió el suelo: la tesis de rebote está invalidada."), 70),
+            (Requirement("Filtro Pánico 1H", not is_panic, h1.get('bias','-'), "SAFE",
+                desc="Verifica que el crash horario no se reanudó tras la entrada.\n✅ Sin pánico activo: el rebote puede continuar.\n⚠️ Pánico activo: salir o ajustar SL urgente."), 40),
+            (Requirement("Recuperación RSI", rsi > 40, round(rsi,1), ">40",
+                desc="RSI subiendo indica que la presión vendedora está cediendo.\n✅ RSI > 40: momentum de recuperación activo.\n⚠️ RSI < 40: sin señal de recuperación, posible continuación bajista."), 10)
         ]
 
         # 3. Calcular Salud Dinámica

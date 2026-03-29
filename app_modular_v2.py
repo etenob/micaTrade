@@ -26,14 +26,20 @@ app.config['JSON_SORT_KEYS'] = False
 # Inicializamos el motor modular
 manager = StrategyManager()
 
-# Cache simple de análisis (se refresca cada vez que el usuario entra, como pediste)
+# Cache de análisis completo: {symbol: {data, multi_tf, timestamp}}
 analysis_cache = {}
 
 def get_full_analysis(symbol):
-    """Obtiene el análisis completo cruzando todas las temporalidades."""
-    # Obtenemos el reporte multi-Temporalidad (1d, 4h, 1h, 15m)
+    """Obtiene el análisis completo. Usa caché si tiene menos de 4 minutos."""
+    import time
+    cached = analysis_cache.get(symbol)
+    if cached and (time.time() - cached['ts']) < 240:  # 4 minutos = fresco
+        return cached['data'], cached['multi_tf']
+    
+    # Caché vencido o inexistente: llamar API
     data = TradingEngineV2.get_real_trading_analysis(symbol)
     multi_tf = TradingEngineV2.get_multi_tf_report(symbol)
+    analysis_cache[symbol] = {'data': data, 'multi_tf': multi_tf, 'ts': time.time()}
     return data, multi_tf
 
 import threading
@@ -42,9 +48,13 @@ radar_cache = []
 is_scanning = False
 
 def get_coin_report(symbol):
-    """Función de apoyo para el escaneo en paralelo."""
+    """Función de apoyo para el escaneo en paralelo. Actualiza Caché al terminar."""
     try:
+        import time
         data = TradingEngineV2.get_real_trading_analysis(symbol)
+        multi_tf = TradingEngineV2.get_multi_tf_report(symbol)
+        # Guardar en caché para que /analisis lo use instantáneamente
+        analysis_cache[symbol] = {'data': data, 'multi_tf': multi_tf, 'ts': time.time()}
         # Obtenemos qué estrategias están disparadas positivamente
         
         # V2: Obtenemos el reporte rico de confluencia para todas las estrategias
@@ -117,11 +127,47 @@ def strategy_detail(symbol):
         # Generar reporte completo de TODO el tribunal (todas las estrategias simultáneamente)
         report = manager.get_strategy_report_all(data)
         
+        # Calcular desglose de confianza (Puntos Merino)
+        from merino_math_v2 import Trend
+        sig  = data.get('signal', {})
+        inds = data.get('indicators', {})
+        price = data.get('current_price', 0)
+
+        whale  = sig.get('whale_alert', 'NORMAL')
+        mf     = sig.get('koncorde', {}).get('strong_hands', 0)
+        adx_v  = inds.get('adx', {}).get('value', 0)
+        rsi_v  = inds.get('rsi', {}).get('value', 50)
+        ema_11 = inds.get('ema', {}).get('ema_11', price)
+        vol_dist = sig.get('volume_profile', {}).get('distance_pct', 99)
+
+        # A. FACTOR BALLENA (Máx 30)
+        whale_pts = 30 if whale == Trend.BULL else (15 if mf > 15 else 0)
+        # B. ADX / Fuerza (Máx 30)
+        adx_pts = 30 if adx_v >= 50 else (20 if adx_v >= 35 else (10 if adx_v >= 23 else 0))
+        # C. MOMENTUM RSI (Máx 20) - proxy: RSI < 50 con margen hacia sobreventa
+        mom_pts = min(20, max(0, int((50 - rsi_v) / 2.5))) if rsi_v < 50 else 0
+        # D. EMA 11 Cercanía (Máx 10)
+        dist_e11 = abs((price - ema_11) / ema_11) * 100 if ema_11 > 0 else 99
+        ema_pts = 10 if dist_e11 < 0.5 else (7 if dist_e11 < 2.0 else (5 if dist_e11 < 7.0 else 0))
+        # E. VPoC Cercanía (Máx 10)
+        vpoc_pts = 10 if abs(vol_dist) < 2.0 else (5 if abs(vol_dist) < 5.0 else 0)
+
+        conf_breakdown = [
+            {'name': '🐋 Factor Ballena',   'pts': whale_pts, 'max': 30},
+            {'name': '📈 ADX (Fuerza)',      'pts': adx_pts,   'max': 30},
+            {'name': '💥 Momentum (RSI)',    'pts': mom_pts,   'max': 20},
+            {'name': '🎯 Proximidad EMA 11', 'pts': ema_pts,   'max': 10},
+            {'name': '🧲 VPoC Cercanía',    'pts': vpoc_pts,  'max': 10},
+        ]
+        total_conf = sig.get('signal_strength', 0)
+        
         return render_template('analyzer_v2.html',
                              symbol=symbol,
                              data=data,
                              multi_tf=multi_tf,
-                             strategies=report)
+                             strategies=report,
+                             conf_breakdown=conf_breakdown,
+                             total_conf=total_conf)
     except Exception as e:
         log.error(f"Error en análisis de {symbol}: {e}")
         return f"Error analizando {symbol}: {str(e)}", 500
@@ -130,7 +176,9 @@ def strategy_detail(symbol):
 def technical_view(symbol):
     """Estación Técnica 360: Grid de 4 gráficos TradingView."""
     symbol = symbol.upper()
-    return render_template('technical_v2.html', symbol=symbol)
+    data = TradingEngineV2.get_real_trading_analysis(symbol)
+    price = data['current_price']
+    return render_template('technical_v2.html', symbol=symbol, price=price)
 
 @app.route('/plotly_fragment/<symbol>')
 def plotly_fragment(symbol):

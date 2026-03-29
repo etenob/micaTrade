@@ -28,20 +28,28 @@ class Action:
     TIGHTEN_SL = "TIGHTEN_SL"
     WAIT = "WAIT"
 
+class Flag:
+    YES = "SI"
+    NO = "NO"
+
 class Requirement:
     """Representa un 'Juez' o condición técnica que debe cumplirse."""
-    def __init__(self, name, status, current=None, target=None):
+    def __init__(self, name, status, current=None, target=None, desc=""):
         self.name = name
         self.status = status     # True/False
         self.current = current   # Valor medido
         self.target = target     # Valor objetivo
+        self.desc = desc         # Texto explicativo para tooltip en la UI
     
     def to_dict(self):
+        # Auto-formatea desc: salto de línea antes de ✅ y ⚠️
+        fmt = self.desc.replace(" ✅", "\n✅").replace(" ⚠️", "\n⚠️") if self.desc else ""
         return {
             "name": self.name,
             "ok": self.status,
             "val": str(self.current),
-            "target": str(self.target)
+            "target": str(self.target),
+            "desc": fmt
         }
 
 class BaseStrategy:
@@ -87,15 +95,18 @@ class BaseStrategy:
             return {
                 "health_score": 100,
                 "recommendation": "SIMULADO",
-                "time_judge": Requirement("Tiempo de Vida", True, "0m", "Simulado").to_dict(),
-                "judges": [Requirement("Tiempo de Vida", True, "0m", "Simulado").to_dict()]
+                "time_judge": Requirement("Tiempo de Vida", True, "0m", "Simulado",
+                    desc="Tiempo transcurrido desde la entrada vs. el máximo permitido por la estrategia.\n✅ Dentro del límite: trade vigente.\n⚠️ Excedido: la posición está oxidada, evaluar salida.").to_dict(),
+                "judges": [Requirement("Tiempo de Vida", True, "0m", "Simulado",
+                    desc="Tiempo transcurrido desde la entrada vs. el máximo permitido por la estrategia.\n✅ Dentro del límite: trade vigente.\n⚠️ Excedido: la posición está oxidada, evaluar salida.").to_dict()]
             }
 
         elapsed = self._get_minutes_elapsed(snapshot)
         max_time = self.params.get("max_patience_min", 360) # Default 6h
         
         # El Juez del Cronómetro (Común para todos)
-        time_judge = Requirement("Tiempo de Vida", elapsed <= max_time, f"{elapsed}m", f"<{max_time}m")
+        time_judge = Requirement("Tiempo de Vida", elapsed <= max_time, f"{elapsed}m", f"<{max_time}m",
+            desc=f"Tiempo transcurrido desde la entrada vs. el máximo permitido ({max_time}m).\n✅ Dentro del límite: trade vigente.\n⚠️ Excedido: posición oxidada, evaluar salida.")
         
         return {
             "health_score": 100 if time_judge.status else 70,

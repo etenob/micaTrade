@@ -115,17 +115,14 @@
         <div class="header-left">
             <div class="logo">MICO TEC V2</div>
             <div class="symbol-badge">{{ symbol.replace('USDT','') }}</div>
-            <div id="priceDisplay" style="color: #00ff88; font-weight: 800; font-size: 1.3rem; margin-left: 1rem;">$0.0000</div>
+            <div id="priceDisplay" style="color: #00ff88; font-weight: 800; font-size: 1.3rem; margin-left: 1rem;">{{ "${:,.4f}".format(price) if price else "$0.0000" }}</div>
             
             <!-- Selector de Temporalidad Potenciado -->
             <div class="controls-group" id="tfSelector" style="margin-left: 1.5rem;">
-                <button class="btn-ctl" data-tf="1m">1m</button>
-                <button class="btn-ctl" data-tf="5m">5m</button>
                 <button class="btn-ctl" data-tf="15m">15m</button>
                 <button class="btn-ctl" data-tf="1h">1h</button>
                 <button class="btn-ctl active" data-tf="4h">4h</button>
                 <button class="btn-ctl" data-tf="1d">1d</button>
-                <button class="btn-ctl" data-tf="1w">1w</button>
             </div>
         </div>
 

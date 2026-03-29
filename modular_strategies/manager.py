@@ -3,6 +3,9 @@ from .ciega import CiegaStrategy
 from .rebote import ReboteStrategy
 from .gatillo import GatilloStrategy
 from .pingpong import PingPongStrategy
+from .sweep_hunter import SweepHunterStrategy
+from .heikin_ashi import HeikinAshiStrategy
+from .divergence import DivergenceStrategy
 from .audit import AuditManager
 
 class StrategyManager:
@@ -21,7 +24,10 @@ class StrategyManager:
             CiegaStrategy(params=cp.get('TENDENCIA_CIEGA')),
             ReboteStrategy(params=cp.get('REBOTE_SUELO')),
             GatilloStrategy(params=cp.get('GATILLO_11')),
-            PingPongStrategy(params=cp.get('BLOCK_PINGPONG'))
+            PingPongStrategy(params=cp.get('BLOCK_PINGPONG')),
+            SweepHunterStrategy(params=cp.get('SWEEP_HUNTER')),
+            HeikinAshiStrategy(params=cp.get('HA_FANTASMA')),
+            DivergenceStrategy(params=cp.get('DIVERGENCIA_3D'))
         ]
         self.strategies = {s.name: s for s in s_list}
 

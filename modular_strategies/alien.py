@@ -1,4 +1,4 @@
-from .base import BaseStrategy, Requirement, Trend, Signal, Action
+from .base import BaseStrategy, Requirement, Trend, Signal, Action, Flag
 from datetime import datetime
 
 class AlienStrategy(BaseStrategy):
@@ -14,7 +14,7 @@ class AlienStrategy(BaseStrategy):
         if params: default_params.update(params)
         
         super().__init__(
-            name="ALIEN",
+            name="ALIEN_90",
             display_name="👽 ALIEN 90",
             description="Estrategia institucional estricta basada en ballenas y fuerza extrema.",
             params=default_params
@@ -30,13 +30,20 @@ class AlienStrategy(BaseStrategy):
 
         # Definimos los Jueces de Alien
         self.requirements = [
-            Requirement("Dirección LONG", sig['signal'] == Signal.LONG, sig['signal'], Signal.LONG),
-            Requirement("Confianza", sig['signal_strength'] >= self.params["strength_min"], sig['signal_strength'], self.params["strength_min"]),
-            Requirement("Ballena Institucional", Trend.BULL in sig.get('whale_alert', ''), Trend.BULL if Trend.BULL in sig.get('whale_alert', '') else "None", Trend.BULL),
-            Requirement("Fuerza ADX", adx > self.params["adx_min"], round(adx,1), self.params["adx_min"]),
-            Requirement("Macro Bias 1D", daily_bias == self.params["daily_bias_req"], daily_bias, self.params["daily_bias_req"]),
-            Requirement("Área de Valor VPoC", sig['volume_profile']['in_value_area'], f"{sig['volume_profile']['distance_pct']}%", "< 5%"),
-            Requirement("Precio sobre EMA 55", price > ema['ema_55'], "SI" if price > ema['ema_55'] else "NO", "SI")
+            Requirement("Dirección LONG", sig['signal'] == Signal.LONG, sig['signal'], Signal.LONG,
+                desc="El motor Merino debe emitir señal LONG activa. ✅ signal == LONG. ⚠️ WAIT o SHORT: no hay confluencia alcista."),
+            Requirement("Confianza", sig['signal_strength'] >= self.params["strength_min"], sig['signal_strength'], self.params["strength_min"],
+                desc=f"Confianza Merino mínima para operar a nivel institucional. ✅ ≥ {self.params['strength_min']} pts. ⚠️ Por debajo: la señal no es suficientemente fuerte."),
+            Requirement("Ballena Institucional", Trend.BULL in sig.get('whale_alert', ''), Trend.BULL if Trend.BULL in sig.get('whale_alert', '') else "None", Trend.BULL,
+                desc="Capital institucional activo comprando detectado vía Koncorde + Heikin-Ashi algoritmo. ✅ whale = BULL. ⚠️ Sin ballena: ALIEN no opera sin institucionales."),
+            Requirement("Fuerza ADX", adx > self.params["adx_min"], round(adx,1), self.params["adx_min"],
+                desc=f"Intensidad cuantificada de la tendencia actual. ✅ ADX > {self.params['adx_min']}: hay momentum. ⚠️ Bajo: tendencia débil o lateral."),
+            Requirement("Macro Bias 1D", daily_bias == self.params["daily_bias_req"], daily_bias, self.params["daily_bias_req"],
+                desc="El sesgo del gráfico diario debe ser alcista. ✅ 1D = BULLISH: operamos a favor. ⚠️ Neutral o bajista: viento en contra."),
+            Requirement("Área de Valor VPoC", sig['volume_profile']['in_value_area'], f"{sig['volume_profile']['distance_pct']}%", "< 5%",
+                desc="Precio dentro de la zona de mayor volumen histórico (Point of Control). ✅ Dentro del 5% del VPoC. ⚠️ Lejos: sin soporte volumétrico real."),
+            Requirement("Precio sobre EMA 55", price > ema['ema_55'], Flag.YES if price > ema['ema_55'] else Flag.NO, Flag.YES,
+                desc="La media exponencial de largo plazo debe ser soporte activo. ✅ precio > EMA 55. ⚠️ Por debajo: la tendencia de fondo está rota.")
         ]
 
         is_triggered = all(r.status for r in self.requirements)
@@ -66,6 +73,7 @@ class AlienStrategy(BaseStrategy):
             "triggered": self.last_check_status,
             "health_score": health,
             "recommendation": recommendation,
+            "health_judges": final_judges,
             "rsi_15m": round(rsi, 1),
             "adx": round(adx, 1),
             "ema_55": round(ema.get('ema_55', 0), 2),
@@ -90,9 +98,12 @@ class AlienStrategy(BaseStrategy):
         # Formato: (Requirement, Penalización si falla)
         audit_juries = [
             (time_judge, 30),
-            (Requirement("Soporte Macro (EMA 55)", price > ema['ema_55'] * 0.995, "SI" if price > ema['ema_55'] * 0.995 else "NO", "SI"), 70),
-            (Requirement("Presencia Ballena", Trend.BULL in sig.get('whale_alert', ''), "SI" if Trend.BULL in sig.get('whale_alert', '') else "NO", "SI"), 40),
-            (Requirement("Inercia Trend (ADX)", adx > 20, round(adx,1), ">20"), 30)
+            (Requirement("Soporte Macro (EMA 55)", price > ema['ema_55'] * 0.995, Flag.YES if price > ema['ema_55'] * 0.995 else Flag.NO, Flag.YES,
+                desc="La media exponencial de largo plazo debe ser soporte activo.\n✅ precio > EMA 55 (-0.5%): tendencia de fondo intacta.\n⚠️ Por debajo: la tendencia macro se rompió, salir."), 70),
+            (Requirement("Presencia Ballena", Trend.BULL in sig.get('whale_alert', ''), Flag.YES if Trend.BULL in sig.get('whale_alert', '') else Flag.NO, Flag.YES,
+                desc="Capital institucional debe seguir activo tras la entrada.\n✅ whale = BULL: los institucionales siguen comprando.\n⚠️ Sin ballena: la tesis alcista perdió respaldo institucional."), 40),
+            (Requirement("Inercia Trend (ADX)", adx > 20, round(adx,1), ">20",
+                desc="La tendencia sigue teniendo energía cuantificable.\n✅ ADX > 20: momentum vigente, trade válido.\n⚠️ ADX < 20: la tendencia se está agotando, ajustar SL."), 30)
         ]
 
         # 3. Calcular Salud Dinámica

@@ -158,6 +158,33 @@ class TradingEngineV2:
         sqz_cols = [c for c in sqz.columns if c.startswith('SQZ_') and 'ON' not in c and 'OFF' not in c] if sqz is not None else []
         df['squeeze'] = sqz[sqz_cols[0]] if sqz_cols else 0
         
+        # --- MONSTRUOS V2: Cálculos Avanzados ---
+        # 1. Heikin-Ashi (Vectorizado rápido)
+        o, h, l, c = df['Open'].values, df['High'].values, df['Low'].values, df['Close'].values
+        ha_c = (o + h + l + c) / 4.0
+        ha_o = np.zeros_like(o)
+        ha_o[0] = (o[0] + c[0]) / 2.0
+        for i in range(1, len(o)): ha_o[i] = (ha_o[i-1] + ha_c[i-1]) / 2.0
+        ha_h = np.maximum.reduce([ha_o, ha_c, h])
+        ha_l = np.minimum.reduce([ha_o, ha_c, l])
+        df['HA_Close'] = ha_c
+        df['HA_Open'] = ha_o
+        df['HA_High'] = ha_h
+        df['HA_Low'] = ha_l
+        df['HA_Color'] = np.where(ha_c > ha_o, 1, -1) # 1 Verde, -1 Rojo
+        
+        # 2. Caza-Liquidaciones (Mechas de Absorción)
+        vol_ma = df['Volume'].rolling(20).mean()
+        df['Vol_Spike_Ratio'] = df['Volume'] / (vol_ma.replace(0, np.nan) + 1e-8)
+        
+        total_candle = (df['High'] - df['Low']).replace(0, np.nan)
+        lower_wick = np.where(df['Close'] > df['Open'], df['Open'] - df['Low'], df['Close'] - df['Low'])
+        df['Lower_Wick_Pct'] = (lower_wick / total_candle) * 100
+        
+        # 3. Trackeador de Divergencias Ocultas
+        # Guardaremos el low y rsi históricos más profundos de las ultimas 30 velas (sin contar la vela actual)
+        df['Rolling_Min_Low'] = df['Low'].shift(1).rolling(30).min()
+        
         return df
 
     @staticmethod
@@ -166,6 +193,7 @@ class TradingEngineV2:
         df_4h_klines = TradingEngineV2.get_binance_klines(symbol, '4h', limit=150)
         df_1h_klines = TradingEngineV2.get_binance_klines(symbol, '1h', limit=150)
         df_1d_klines = TradingEngineV2.get_binance_klines(symbol, '1d', limit=150)
+        df_15m_klines = TradingEngineV2.get_binance_klines(symbol, '15m', limit=150)
 
         if df_4h_klines.empty or len(df_4h_klines) < 2:
             price = TradingEngineV2.get_backup_price(symbol)
@@ -185,6 +213,16 @@ class TradingEngineV2:
         e11, e55 = df['ema_11'].iloc[-1], df['ema_55'].iloc[-1]
         sqz, sqz_prev = df['squeeze'].iloc[-1], df['squeeze'].iloc[-2]
         
+        # Detección de Divergencia Alcista Directa (Precio Low Más bajo, RSI Más alto que el valle anterior)
+        # Buscamos el índice del mínimo de las últimas 30 velas
+        bullish_divergence = False
+        if len(df) > 30:
+            hist_min_idx = df['Low'].iloc[-30:-2].idxmin() # Mínimo anterior
+            hist_low = df.loc[hist_min_idx, 'Low']
+            hist_rsi = df.loc[hist_min_idx, 'rsi']
+            if current_price < hist_low and rsi_v > hist_rsi + 3.0: 
+                bullish_divergence = True
+        
         # Lógica Normalizada V2 con Constantes
         trend = Trend.BULLISH if e11 > e55 else Trend.BEARISH
         goLong = (whale == Trend.BULL) or (trend == Trend.BULLISH and sqz > sqz_prev)
@@ -198,35 +236,46 @@ class TradingEngineV2:
         # Sistema de 100 Puntos (Redistribuido para dar peso a Ballenas)
         vol_data = TradingEngineV2._calculate_volume_profile(df)
         m_pts = 0
+        m_breakdown = {}
         
-        # A. FACTOR BALLENA (Máx 30) - [NUEVO PRO]
-        if whale == Trend.BULL: m_pts += 30
-        elif mf > 15: m_pts += 15 # Solo manos fuertes entrando sin señal de whale HA aún
+        # A. FACTOR BALLENA (Máx 30)
+        _wp = 30 if whale == Trend.BULL else (15 if mf > 15 else 0)
+        m_pts += _wp
+        m_breakdown['ballena'] = {'name': '🐋 Factor Ballena', 'pts': _wp, 'max': 30, 'val': str(whale),
+            'desc': 'Capital institucional detectado vía Koncorde + Heikin-Ashi.\n✅ Ballena BULL → 30pts (máximo). Manos fuertes > 15 → 15pts.\n⚠️ 0 pts: sin institucionales.'}
         
-        # B. ADX (Máx 30) - (Ajustado de 40 a 30)
-        if adx_v >= 50: m_pts += 30
-        elif adx_v >= 35: m_pts += 20
-        elif adx_v >= 23: m_pts += 10
+        # B. ADX (Máx 30)
+        _dp = 30 if adx_v >= 50 else (20 if adx_v >= 35 else (10 if adx_v >= 23 else 0))
+        m_pts += _dp
+        m_breakdown['adx'] = {'name': '📈 ADX (Fuerza)', 'pts': _dp, 'max': 30, 'val': round(adx_v, 1),
+            'desc': 'Intensidad cuantificada de la tendencia (ADX).\n✅ ≥50→30pts (extrema), ≥35→20pts (fuerte), ≥23→10pts (válida).\n⚠️ <23 → 0 pts: tendencia lateral, no operar.'}
         
-        # C. MOMENTUM (Máx 20) - (Ajustado de 30 a 20)
-        # Basado en la magnitud del Squeeze
+        # C. MOMENTUM Squeeze (Máx 20)
         squeeze_val = abs(df['squeeze'].iloc[-1])
-        m_pts += min(20, int(squeeze_val * 10))
+        _mp = min(20, int(squeeze_val * 10))
+        m_pts += _mp
+        m_breakdown['momentum'] = {'name': '💥 Squeeze Momentum', 'pts': _mp, 'max': 20, 'val': round(squeeze_val, 3),
+            'desc': 'Magnitud del squeeze LazyBear liberado. Mide la energía comprimida que se está liberando ahora.\n✅ squeeze × 10, máximo 20pts.\n⚠️ ~0: sin compresión previa, entrada sin catalizador.'}
         
-        # D. EMA 11 (Máx 10) - (Ajustado de 20 a 10)
+        # D. EMA 11 (Máx 10) — orden corregido: < 0.5 > < 2.0 > < 7.0
         dist_e11 = abs((current_price - e11) / e11) * 100
-        if dist_e11 < 0.5: m_pts += 10
-        elif dist_e11 < 7.0: m_pts += 7
-        elif dist_e11 < 2.0: m_pts += 5
+        _ep = 10 if dist_e11 < 0.5 else (5 if dist_e11 < 2.0 else (7 if dist_e11 < 7.0 else 0))
+        m_pts += _ep
+        m_breakdown['ema11'] = {'name': '🎯 Proximidad EMA11', 'pts': _ep, 'max': 10, 'val': f"{dist_e11:.1f}%",
+            'desc': 'Distancia del precio a la EMA 11 (corto plazo). Cerca = entrada precisa.\n✅ <0.5%→10pts, <2%→5pts, <7%→7pts.\n⚠️ >7%: lejos de base, entrada tardía o sobreextendida.'}
         
-        # E. VPoC (Máx 10) - Cercanía al valor
-        if abs(vol_data['distance_pct']) < 2.0: m_pts += 10
-        elif abs(vol_data['distance_pct']) < 5.0: m_pts += 5
+        # E. VPoC (Máx 10)
+        _vp = 10 if abs(vol_data['distance_pct']) < 2.0 else (5 if abs(vol_data['distance_pct']) < 5.0 else 0)
+        m_pts += _vp
+        m_breakdown['vpoc'] = {'name': '🧲 VPoC Cercanía', 'pts': _vp, 'max': 10, 'val': f"{vol_data['distance_pct']:.1f}%",
+            'desc': 'Cercanía al Point of Control de volumen (zona de mayor actividad histórica).\n✅ <2%→10pts, <5%→5pts: hay soporte volumétrico real.\n⚠️ >5% → 0pts: sin respaldo de volumen.'}
+
+
         
         strength = m_pts # Nuestra fuerza profesional definitiva con ballenas incluidas
         
         multi_tf_data = {}
-        for tf, df_tf in [('1h', df_1h_klines), ('1d', df_1d_klines)]:
+        for tf, df_tf in [('15m', df_15m_klines), ('1h', df_1h_klines), ('1d', df_1d_klines)]:
             if not df_tf.empty:
                 df_calc = TradingEngineV2._calculate_indicators(df_tf)
                 last = df_calc.iloc[-1]
@@ -266,13 +315,25 @@ class TradingEngineV2:
                 'order_blocks': {'bullish_ob_price': ob_bull['price'] if ob_bull else 0.0, 'bearish_ob_price': ob_bear['price'] if ob_bear else 0.0}
             },
             'indicators': {
-                'rsi': {'value': round(float(rsi_v), 1)},
+                'rsi': {'value': round(float(rsi_v), 1), 'bullish_divergence': bullish_divergence},
                 'ema': {'ema_11': round(float(e11), 4), 'ema_55': round(float(e55), 4)},
                 'adx': {'value': round(float(adx_v), 1)},
-                'nadaraya': {'upper': round(float(df['upper_band'].iloc[-1]), 4), 'lower': round(float(df['lower_band'].iloc[-1]), 4)}
+                'nadaraya': {'upper': round(float(df['upper_band'].iloc[-1]), 4), 'lower': round(float(df['lower_band'].iloc[-1]), 4)},
+                'heikin_ashi': {
+                    'color': int(df['HA_Color'].iloc[-1]),
+                    'prev_color': int(df['HA_Color'].iloc[-2]),
+                    'prev2_color': int(df['HA_Color'].iloc[-3]),
+                    'open': float(df['HA_Open'].iloc[-1]),
+                    'low': float(df['HA_Low'].iloc[-1])
+                },
+                'volume_spike': {
+                    'ratio': round(float(df['Vol_Spike_Ratio'].iloc[-1]), 2),
+                    'lower_wick_pct': round(float(df['Lower_Wick_Pct'].iloc[-1]), 2)
+                }
             },
             'multi_tf': multi_tf_data,
             'report': {'ema_55': round(float(e55), 2), 'time_info': 'V2 ESCANEO OK'},
+            'merino_breakdown': list(m_breakdown.values()),
             'last_update': datetime.now().strftime('%H:%M:%S')
         }
 
@@ -315,7 +376,7 @@ class TradingEngineV2:
         if df_klines.empty: return f"<h1>Error para {symbol}</h1>"
         df = TradingEngineV2._calculate_indicators(df_klines)
         
-        from trade_manager import TradeManager
+        from trade_manager_v2 import TradeManager
         active_trade = TradeManager.get_active_trade(symbol)
         
         fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.03, row_heights=[0.7, 0.3], specs=[[{"secondary_y": False}], [{"secondary_y": True}]])

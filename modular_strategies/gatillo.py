@@ -22,12 +22,18 @@ class GatilloStrategy(BaseStrategy):
         
         # El Tribunal de Jueces de Gatillo
         self.requirements = [
-            Requirement("Dirección LONG", sig['signal'] == Signal.LONG, sig['signal'], Signal.LONG),
-            Requirement("Confianza", sig['signal_strength'] >= self.params["strength_min"], sig['signal_strength'], self.params["strength_min"]),
-            Requirement("Soporte EMA 11", 0 < dist_ema11 <= self.params["ema_dist_max"], f"{dist_ema11:.2f}%", f"<= {self.params['ema_dist_max']}%"),
-            Requirement("Room RSI", rsi < self.params["rsi_max"], round(rsi,1), f"< {self.params['rsi_max']}"),
-            Requirement("Fuerza Trend (ADX)", adx > self.params["adx_min"], round(adx,1), self.params["adx_min"]),
-            Requirement("Squeeze 1H", h1_sqz == 'UP', h1_sqz, "UP")
+            Requirement("Dirección LONG", sig['signal'] == Signal.LONG, sig['signal'], Signal.LONG,
+                desc="Motor Merino emite señal LONG activa. ✅ LONG. ⚠️ WAIT o SHORT: no operar."),
+            Requirement("Confianza", sig['signal_strength'] >= self.params["strength_min"], sig['signal_strength'], self.params["strength_min"],
+                desc=f"Puntos Merino mínimos para operación. ✅ ≥ {self.params['strength_min']}. ⚠️ Debajo: señal débil."),
+            Requirement("Soporte EMA 11", 0 < dist_ema11 <= self.params["ema_dist_max"], f"{dist_ema11:.2f}%", f"<= {self.params['ema_dist_max']}%",
+                desc=f"Precio tocando la EMA de corto plazo — entrada de precisión. ✅ dist 0%-{self.params['ema_dist_max']}% sobre EMA 11. ⚠️ Lejos o por debajo: entrada tardía o rota."),
+            Requirement("Room RSI", rsi < self.params["rsi_max"], round(rsi,1), f"< {self.params['rsi_max']}",
+                desc=f"RSI con espacio de recorrido al alza disponible. ✅ RSI < {self.params['rsi_max']}. ⚠️ Sobrecomprado: sin recorrido."),
+            Requirement("Fuerza Trend (ADX)", adx > self.params["adx_min"], round(adx,1), self.params["adx_min"],
+                desc=f"Momentum cuantificado activo en el mercado. ✅ ADX > {self.params['adx_min']}. ⚠️ Debajo: tendencia sin energía."),
+            Requirement("Squeeze 1H", h1_sqz == 'UP', h1_sqz, "UP",
+                desc="El squeeze LazyBear en 1H está liberando energía hacia arriba. ✅ squeeze_trend = UP. ⚠️ Neutral o DOWN: la energía está contenida o bajando.")
         ]
 
         is_triggered = all(r.status for r in self.requirements)
@@ -43,6 +49,7 @@ class GatilloStrategy(BaseStrategy):
             "triggered": self.last_check_status,
             "health_score": perf["health_score"],
             "recommendation": perf["recommendation"],
+            "health_judges": perf.get("judges", []),
             "rsi_15m": perf.get("rsi_15m", 0),
             "adx": perf.get("adx", 0),
             "ema_55": perf.get("ema_55", 0),
@@ -67,9 +74,12 @@ class GatilloStrategy(BaseStrategy):
         # 2. Definir los Jueces Auditores de Salud (Persecución)
         audit_juries = [
             (time_judge, 30),
-            (Requirement("Soporte EMA 11", price > ema['ema_11'] * 0.998, "SI" if price > ema['ema_11'] * 0.998 else "NO", "SI"), 60),
-            (Requirement("Momentum Squeeze 1H", h1_sqz == Squeeze.UP, h1_sqz, Squeeze.UP), 50),
-            (Requirement("Capa RSI (Sobrecra)", rsi < 75, round(rsi,1), "<75"), 10)
+            (Requirement("Soporte EMA 11", price > ema['ema_11'] * 0.998, "SI" if price > ema['ema_11'] * 0.998 else "NO", "SI",
+                desc="El precio debe mantenerse por encima de la EMA 11 (base del trade).\n✅ precio sobre EMA 11 (-0.2%): soporte de corto plazo vigente.\n⚠️ Rompe EMA 11: el trade perdió su base, ajustar SL."), 60),
+            (Requirement("Momentum Squeeze 1H", h1_sqz == Squeeze.UP, h1_sqz, Squeeze.UP,
+                desc="El squeeze en 1H debe seguir liberando energía alcista.\n✅ squeeze_trend = UP: momentum activo y direccional.\n⚠️ Neutral o DOWN: la energía se agotó o invirtió."), 50),
+            (Requirement("Capa RSI (Sobrecra)", rsi < 75, round(rsi,1), "<75",
+                desc="RSI sin sobrecompra extrema durante el trade.\n✅ RSI < 75: hay recorrido disponible.\n⚠️ RSI > 75: sobrecomprado, riesgo de corrección inminente."), 10)
         ]
 
         # 3. Calcular Salud Dinámica

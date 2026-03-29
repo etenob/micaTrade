@@ -33,14 +33,22 @@ class CiegaStrategy(BaseStrategy):
 
         # El Tribunal de Jueces de Ciega
         self.requirements = [
-            Requirement("Dirección LONG", sig['signal'] == Signal.LONG, sig['signal'], Signal.LONG),
-            Requirement("Confianza Técnica", sig['signal_strength'] >= self.params["strength_min"], sig['signal_strength'], self.params["strength_min"]),
-            Requirement("Fuerza Momentum (ADX)", adx > self.params["adx_min"], round(adx,1), self.params["adx_min"]),
-            Requirement("Tendencia Macro 1D", daily_bias == Trend.BULLISH, daily_bias, Trend.BULLISH),
-            Requirement("Cerca de VPoC (Vol)", sig['volume_profile']['in_value_area'], f"{sig['volume_profile']['distance_pct']}%", "< 5%"),
-            Requirement("Escudo EMA (Cerca Base)", 0 < dist_ema55 <= self.params["max_ema_dist"], f"{dist_ema55:.1f}%", f"<= {self.params['max_ema_dist']}%"),
-            Requirement("Escudo Nad (Espacio Techo)", dist_techo >= self.params["min_techo_dist"], f"{dist_techo:.1f}%", f">= {self.params['min_techo_dist']}%"),
-            Requirement("Escudo RSI (No FOMO)", rsi < self.params["max_rsi"], round(rsi,1), f"< {self.params['max_rsi']}")
+            Requirement("Dirección LONG", sig['signal'] == Signal.LONG, sig['signal'], Signal.LONG,
+                desc="Motor Merino debe emitir señal LONG. ✅ signal = LONG. ⚠️ WAIT o SHORT: no operar."),
+            Requirement("Confianza Técnica", sig['signal_strength'] >= self.params["strength_min"], sig['signal_strength'], self.params["strength_min"],
+                desc=f"Señal Merino con fuerza técnica sin necesitar ballena. ✅ ≥ {self.params['strength_min']} pts. ⚠️ Debajo: señal insuficiente."),
+            Requirement("Fuerza Momentum (ADX)", adx > self.params["adx_min"], round(adx,1), self.params["adx_min"],
+                desc=f"Energía cuantificada de la tendencia. ✅ ADX > {self.params['adx_min']}. ⚠️ Debajo: tendencia lateral o débil."),
+            Requirement("Tendencia Macro 1D", daily_bias == Trend.BULLISH, daily_bias, Trend.BULLISH,
+                desc="El gráfico diario debe ser alcista. ✅ 1D = BULLISH: operamos con el viento. ⚠️ Neutral o bajista: contra tendencia macro."),
+            Requirement("Cerca de VPoC (Vol)", sig['volume_profile']['in_value_area'], f"{sig['volume_profile']['distance_pct']}%", "< 5%",
+                desc="Precio en zona de mayor interés institucional. ✅ Dentro del 5% del VPoC. ⚠️ Fuera: sin soporte volumétrico."),
+            Requirement("Escudo EMA (Cerca Base)", 0 < dist_ema55 <= self.params["max_ema_dist"], f"{dist_ema55:.1f}%", f"<= {self.params['max_ema_dist']}%",
+                desc=f"Anti-FOMO: no entramos muy lejos de la EMA 55. ✅ dist < {self.params['max_ema_dist']}%. ⚠️ Más lejos: entrada tardía, ratio R:R malo."),
+            Requirement("Escudo Nad (Espacio Techo)", dist_techo >= self.params["min_techo_dist"], f"{dist_techo:.1f}%", f">= {self.params['min_techo_dist']}%",
+                desc=f"Debe haber espacio libre hasta el techo Nadaraya (ratio R:R). ✅ dist techo > {self.params['min_techo_dist']}%. ⚠️ Sin espacio: no hay recorrido potencial."),
+            Requirement("Escudo RSI (No FOMO)", rsi < self.params["max_rsi"], round(rsi,1), f"< {self.params['max_rsi']}",
+                desc=f"RSI sin sobrecompra para evitar comprar bombeado. ✅ RSI < {self.params['max_rsi']}. ⚠️ Sobrecomprado: riesgo de comprar en techo.")
         ]
 
         is_triggered = all(r.status for r in self.requirements)
@@ -56,11 +64,13 @@ class CiegaStrategy(BaseStrategy):
             "triggered": self.last_check_status,
             "health_score": perf["health_score"],
             "recommendation": perf["recommendation"],
+            "health_judges": perf.get("judges", []),
             "rsi_15m": perf.get("rsi_15m", 0),
             "adx": perf.get("adx", 0),
             "ema_55": perf.get("ema_55", 0),
             "time_info": perf.get("time_info", "Simulado")
         }
+
 
     def evaluate_performance(self, snapshot, current_analysis):
         """Auditoría de Salud de Ciega basada en el Tribunal de Jueces."""
@@ -79,9 +89,12 @@ class CiegaStrategy(BaseStrategy):
         # 2. Definir los Jueces Auditores de Salud (🦅🦅)
         audit_juries = [
             (time_judge, 20),
-            (Requirement("Momentum Trail (ADX)", adx > 18, round(adx,1), ">18"), 40),
-            (Requirement("Base Macro (EMA 55)", price > ema['ema_55'] * 0.997, "SI" if price > ema['ema_55'] * 0.997 else "NO", "SI"), 60),
-            (Requirement("Escudo RSI", rsi < 80, round(rsi,1), "<80"), 10)
+            (Requirement("Momentum Trail (ADX)", adx > 18, round(adx,1), ">18",
+                desc="La tendencia sigue activa y con energía suficiente para continuar.\n✅ ADX > 18: trending válido.\n⚠️ ADX < 18: mercado lateral, la tendencia se está muriendo."), 40),
+            (Requirement("Base Macro (EMA 55)", price > ema['ema_55'] * 0.997, "SI" if price > ema['ema_55'] * 0.997 else "NO", "SI",
+                desc="El precio debe mantenerse sobre la EMA de largo plazo (soporte macro).\n✅ precio sobre EMA 55: tendencia de fondo intacta.\n⚠️ Rompe EMA 55: salida urgente, la tendencia terminó."), 60),
+            (Requirement("Escudo RSI", rsi < 80, round(rsi,1), "<80",
+                desc="RSI no sobrecomprado durante el trade de tendencia.\n✅ RSI < 80: recorrido disponible al alza.\n⚠️ RSI > 80: zona de sobrecompra extrema, ajustar SL."), 10)
         ]
 
         # 3. Calcular Salud Dinámica

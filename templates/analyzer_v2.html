@@ -188,6 +188,37 @@
         .stat-label { font-size: 0.7rem; opacity: 0.5; text-transform: uppercase; display: block; }
         .stat-val { font-size: 1.1rem; font-weight: 600; color: var(--accent); }
 
+        /* === TOOLTIP SYSTEM === */
+        [data-tooltip] { position: relative; cursor: help; }
+        [data-tooltip]::before {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 10px);
+            left: 50%;
+            transform: translateX(-50%) scale(0.95);
+            background: rgba(6, 8, 20, 0.97);
+            border: 1px solid rgba(255,255,255,0.13);
+            border-radius: 14px;
+            padding: 0.75rem 1rem;
+            font-size: 0.92rem;
+            line-height: 1.6;
+            white-space: pre-line;
+            max-width: 300px;
+            min-width: 180px;
+            width: max-content;
+            backdrop-filter: blur(24px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.18s ease, transform 0.18s ease;
+            z-index: 9999;
+            color: rgba(255,255,255,0.85);
+            text-align: left;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 400;
+        }
+        [data-tooltip]:hover::before { opacity: 1; transform: translateX(-50%) scale(1); }
+
     </style>
 </head>
 <body>
@@ -211,11 +242,38 @@
             </div>
         </section>
 
+        <!-- === DESGLOSE DE CONFIANZA MERINO (datos reales del motor) === -->
+        {% set _tc = data['signal'].get('signal_strength', 0) | int %}
+        {% set _breakdown = data.get('merino_breakdown', []) %}
+        <section style="margin-bottom: 3rem; padding: 2rem; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 24px; backdrop-filter: blur(10px);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="margin: 0; font-weight: 300; font-size: 1.1rem; letter-spacing: 1px; text-transform: uppercase;">⚖️ Puntos Merino — Desglose de Confianza</h3>
+                <div style="font-size: 2rem; font-weight: 800; color: {% if _tc >= 70 %}var(--success){% elif _tc >= 45 %}var(--warning){% else %}var(--danger){% endif %};">
+                    {{ _tc }}<span style="font-size: 1rem; opacity: 0.5;">/100 pts</span>
+                </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.9rem;">
+            {% for item in _breakdown %}
+                {% set pct = ((item.pts / item.max) * 100) | int if item.max > 0 else 0 %}
+                <div data-tooltip="{{ item.get('desc', '') }}" style="display: grid; grid-template-columns: 200px 1fr 90px 60px; align-items: center; gap: 1rem; cursor: help;">
+                    <span style="font-size: 0.85rem; opacity: 0.85;">{{ item.name }}</span>
+                    <div style="height: 8px; background: rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden;">
+                        <div style="height: 100%; width: {{ pct }}%; border-radius: 10px; background: {% if pct >= 80 %}var(--success){% elif pct >= 40 %}var(--warning){% else %}rgba(255,68,68,0.6){% endif %}; transition: width 1s ease;"></div>
+                    </div>
+                    <span style="font-size: 0.75rem; text-align: center; opacity: 0.55; font-family: monospace;">{{ item.val }}</span>
+                    <span style="font-size: 0.8rem; font-weight: 700; text-align: right; color: {% if pct >= 80 %}var(--success){% elif pct >= 40 %}var(--warning){% else %}var(--danger){% endif %};">{{ item.pts }}/{{ item.max }}</span>
+                </div>
+            {% else %}
+                <span style="opacity:0.4; font-size:0.8rem;">Reinicia el servidor para ver el desglose en tiempo real.</span>
+            {% endfor %}
+            </div>
+        </section>
+
         <h2 style="margin-bottom: 2rem; font-weight: 300">Veredicto de las Estrategias</h2>
         
         <div class="strategy-container">
             {% for strat_name, details in strategies.items() %}
-            <article class="strategy-card">
+            <article class="strategy-card" style="border-color: {{ 'rgba(0,255,136,0.25)' if details.triggered else 'var(--glass-border)' }};">
                 <div class="strat-header">
                     <span class="strat-name">{{ strat_name }}</span>
                     <span class="verdict-badge {{ 'verdict-ok' if details.triggered else 'verdict-no' }}">
@@ -225,7 +283,7 @@
 
                 <ul class="judge-list">
                     {% for judge in details.judges %}
-                    <li class="judge-item">
+                    <li class="judge-item" data-tooltip="{{ judge.desc }}">
                         <div class="judge-info">
                             <span class="judge-icon">{{ '✅' if judge.ok else '❌' }}</span>
                             <span class="judge-name">{{ judge.name }}</span>
@@ -239,36 +297,42 @@
                     </li>
                     {% endfor %}
                 </ul>
+
+                <!-- SALUD INTERNA POR ESTRATEGIA -->
+                {% if details.health_score is defined %}
+                <div style="margin-top: 1.5rem; padding-top: 1.2rem; border-top: 1px solid var(--glass-border);">
+                    <!-- Cabecera con score y acción -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+                        <span style="font-size: 0.7rem; opacity: 0.5; text-transform: uppercase; letter-spacing: 1px;">💊 Salud del Trade</span>
+                        <span style="font-size: 0.85rem; font-weight: 700; color: {{ 'var(--success)' if details.health_score > 70 else 'var(--warning)' if details.health_score > 40 else 'var(--danger)' }};">{{ details.health_score }}% — {{ details.recommendation }}</span>
+                    </div>
+                    <!-- Barra visual -->
+                    <div style="height: 6px; background: rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; margin-bottom: 1rem;">
+                        <div style="height: 100%; width: {{ details.health_score }}%; border-radius: 10px; background: {{ 'var(--success)' if details.health_score > 70 else 'var(--warning)' if details.health_score > 40 else 'var(--danger)' }}; transition: width 1s ease;"></div>
+                    </div>
+                    <!-- Jueces de salud -->
+                    {% if details.health_judges %}
+                    <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem;">
+                        {% for hjudge in details.health_judges %}
+                        <li data-tooltip="{{ hjudge.desc }}" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; opacity: 0.75;">
+                            <span>{{ '✅' if hjudge.ok else '⚠️' }} {{ hjudge.name }}</span>
+                            <span style="font-weight: 600; color: {{ 'var(--success)' if hjudge.ok else 'var(--warning)' }};">{{ hjudge.val }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+                {% endif %}
             </article>
             {% endfor %}
         </div>
 
-        <section class="health-section">
-            <h2 style="margin: 0; font-weight: 300">Estado de Salud del Presente (Simulado)</h2>
-            <p style="opacity: 0.5; font-size: 0.9rem;">Qué pasaría si estuviéramos dentro de este trade ahora mismo:</p>
-            
-            <div class="health-bar-container">
-                {% if strategies %}
-                    {% set main_strat = strategies.get('alien') or (strategies.values()|list|first) %}
-                    <div class="health-fill" style="width: {{ main_strat.health_score }}%; background: {{ 'var(--success)' if main_strat.health_score > 70 else 'var(--warning)' if main_strat.health_score > 40 else 'var(--danger)' }}"></div>
-                {% else %}
-                    <div class="health-fill" style="width: 0%; background: var(--glass-border)"></div>
-                {% endif %}
-            </div>
-            <div style="display: flex; justify-content: space-between; font-weight: 800;">
-                {% if strategies %}
-                    {% set main_strat = strategies.get('alien') or (strategies.values()|list|first) %}
-                    <span>SALUD: {{ main_strat.health_score }}%</span>
-                    <span style="color: var(--accent)">ACCIÓN: {{ main_strat.recommendation }}</span>
-                {% else %}
-                    <span>SALUD: --%</span>
-                    <span style="color: var(--warning)">ACCIÓN: ESPERANDO SEÑAL</span>
-                {% endif %}
-            </div>
-
+        <!-- STATS GLOBALES INFERIORES -->
+        <section class="health-section" style="margin-top: 3rem;">
+            <h2 style="margin: 0 0 1.5rem 0; font-weight: 300; font-size: 1rem; opacity: 0.6; letter-spacing: 1px; text-transform: uppercase;">📡 Indicadores Generales</h2>
             <div class="stat-grid">
                 <div class="stat-box">
-                    <span class="stat-label">RSI 15m</span>
+                    <span class="stat-label">RSI</span>
                     <span class="stat-val">{{ data.indicators.rsi.value | round(1) }}</span>
                 </div>
                 <div class="stat-box">
@@ -277,15 +341,15 @@
                 </div>
                 <div class="stat-box">
                     <span class="stat-label">EMA 55</span>
-                    <span class="stat-val">${{ data.report.ema_55 }}</span>
+                    <span class="stat-val">${{ data.indicators.ema.ema_55 }}</span>
                 </div>
                 <div class="stat-box">
-                    <span class="stat-label">VOLUMEN</span>
-                    <span class="stat-val" id="volVal">--</span>
+                    <span class="stat-label">EMA 11</span>
+                    <span class="stat-val">${{ data.indicators.ema.ema_11 }}</span>
                 </div>
-                <div class="stat-box" title="Tiempo de vida de la señal o paciencia restante">
-                    <span class="stat-label">TIEMPO</span>
-                    <span class="stat-val" style="color: #ffaa00;">{{ data.report.time_info or 'N/A' }}</span>
+                <div class="stat-box">
+                    <span class="stat-label">NADARAYA INF.</span>
+                    <span class="stat-val">${{ data.indicators.nadaraya.lower }}</span>
                 </div>
             </div>
         </section>
